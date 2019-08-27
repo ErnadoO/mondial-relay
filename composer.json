@@ -1,0 +1,26 @@
+{
+	"name" : "ernadoo/mondial-relay",
+	"type": "library",
+	"description" : "Mondial Relay API",
+	"keywords" : [
+		"Mondial Relay"
+	],
+	"license" : "MIT",
+	"authors" : [{
+			"name" : "Erwan Nader",
+			"role" : "Developer"
+		}
+	],
+	"require" : {
+		"php" : "^7.1",
+		"ext-soap": "*",
+	},
+	"config" : {
+		"sort-packages" : true
+	},
+	"autoload" : {
+		"psr-4" : {
+			"Ernadoo\\MondialRelay\\" : "src/"
+		}
+	}
+}
