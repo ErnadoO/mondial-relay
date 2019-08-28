@@ -111,7 +111,7 @@ class ApiHelper
 
 		$result = current($result);
 		reset($result);
-		$statusDescription = "The service returned a " . $result['STAT'] . " Code : " .$_status[$result['STAT']] . ".";
+		$statusDescription = "The service returned a " . $result->STAT . " Code : " .$_status[$result->STAT] . ".";
 
 		return $statusDescription;
 	}

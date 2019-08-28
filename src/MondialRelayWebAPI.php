@@ -4,7 +4,6 @@ namespace Ernadoo\MondialRelay;
 
 use Ernadoo\MondialRelay\dto\{RegisteredParcelStatusData, RegisteredShipmentData};
 use Ernadoo\MondialRelay\helpers\{ApiHelper, ParcelShopHelper};
-use Http\Discovery\HttpClientDiscovery;
 
 /**
  * API Mondial Relay
@@ -622,7 +621,6 @@ class MondialRelayWebAPI {
 	{
 		//$result = $this->_SoapClient->call($methodName, $ParameterArray, $this->_APIEndPointUrlV1 , $this->_APIEndPointUrlV1 . $methodName);
 		$result = $this->_SoapClient->{$methodName}($ParameterArray);
-		$httplug = HttpClientDiscovery::find();
 
 		// Display the request and response
 		if($this->_Debug){
