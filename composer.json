@@ -13,7 +13,7 @@
 	],
 	"require" : {
 		"php" : "^7.1",
-		"ext-soap": "*",
+		"ext-soap": "*"
 	},
 	"config" : {
 		"sort-packages" : true
