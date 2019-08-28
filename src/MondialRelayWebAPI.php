@@ -4,6 +4,7 @@ namespace Ernadoo\MondialRelay;
 
 use Ernadoo\MondialRelay\dto\{RegisteredParcelStatusData, RegisteredShipmentData};
 use Ernadoo\MondialRelay\helpers\{ApiHelper, ParcelShopHelper};
+use Http\Discovery\HttpClientDiscovery;
 
 /**
  * API Mondial Relay
@@ -96,7 +97,7 @@ class MondialRelayWebAPI {
 	 * @var boolean
 	 * @access private
 	 */
-	public $_Debug = true;
+	public $_Debug = false;
 
 	/**
 	* constructor
@@ -107,9 +108,11 @@ class MondialRelayWebAPI {
 	* @param	string $ApiBrandId Mondial Relay API Numeric Brand ID (2 digits) (provided by your technical contact)
 	* @access   public
 	*/
-	public function __construct()
+	public function __construct($wsdl, $customerCode, $secretKey)
 	{
-		$this->_SoapClient = new \SoapClient($this->_APIEndPointUrlV1 . $this->_APIFileEndPointV1);
+		$this->_SoapClient			= new \SoapClient($wsdl, ['trace' => true]);
+		$this->_Api_CustomerCode	= $customerCode;
+		$this->_Api_SecretKey		= $secretKey;
 	}
 
 	public function __destruct()
@@ -129,29 +132,22 @@ class MondialRelayWebAPI {
 	* @access   public
 	* @return   Array of parcelShop
 	*/
-	public function SearchParcelShop($CountryCode, $PostCode, $DeliveryMode = "", $ParcelWeight = "", $ParcelShopActivityCode="",$SearchDistance="",$SearchOpenningDelay = "")
+	public function SearchParcelShop($params)
 	{
-		$params = array(
-			'Enseigne'		=> str_pad($this->_Api_CustomerCode,8),
-			'Pays'			=> $CountryCode,
-			'Ville'			=> "",
-			'CP'			=> $PostCode,
-			'Taille'		=> "",
-			'Poids'			=> $ParcelWeight,
-			'Action'		=> $DeliveryMode,
-			'RayonRecherche'=> $SearchDistance,
-			'TypeActivite'	=> $ParcelShopActivityCode,
-			'DelaiEnvoi'	=> $SearchOpenningDelay
-		);
+		try {
+			$result = $this->CallWebApi('WSI4_PointRelais_Recherche', $this->AddSecurityCode($params));
 
-		$result = $this->CallWebApi("WSI3_PointRelais_Recherche", $this->AddSecurityCode($params));
+			foreach($result->PointsRelais->PointRelais_Details as $val)
+			{
+				$parcelShopArray[] = ParcelShopHelper::ParcelShopResultToDTO($val);
+			}
 
-		foreach($result["WSI3_PointRelais_RechercheResult"]["PointsRelais"]["PointRelais_Details"] as $val)
-		{
-			$parcelShopArray[] = ParcelShopHelper::ParcelShopResultToDTO($val);
+			return $parcelShopArray;
 		}
-
-		return $parcelShopArray;
+		catch (\SoapFault $e)
+		{
+			throw new \Exception();
+		}
 	}
 
 	/**
@@ -599,12 +595,12 @@ class MondialRelayWebAPI {
 	* @access   private
 	* @return   string
 	*/
-	private function AddSecurityCode($ParameterArray, $ReturnArray = true)
-	{
+	private function AddSecurityCode($ParameterArray, $ReturnArray = true){
 
+		$ParameterArray = array_merge(['Enseigne' => $this->_Api_CustomerCode], $ParameterArray);
 		$secString = "";
 		foreach($ParameterArray as $prm){
-				$secString .= $prm;
+			$secString .= $prm;
 		}
 
 		if($ReturnArray){
@@ -622,9 +618,11 @@ class MondialRelayWebAPI {
 	* @param	$ParameterArray Soap parameters array
 	* @access   private
 	*/
-	private function CallWebApi($methodName,$ParameterArray)
+	private function CallWebApi($methodName, $ParameterArray)
 	{
-		$result = $this->_SoapClient->call($methodName, $ParameterArray, $this->_APIEndPointUrlV1 , $this->_APIEndPointUrlV1 . $methodName);
+		//$result = $this->_SoapClient->call($methodName, $ParameterArray, $this->_APIEndPointUrlV1 , $this->_APIEndPointUrlV1 . $methodName);
+		$result = $this->_SoapClient->{$methodName}($ParameterArray);
+		$httplug = HttpClientDiscovery::find();
 
 		// Display the request and response
 		if($this->_Debug){
@@ -635,18 +633,18 @@ class MondialRelayWebAPI {
 			echo '<pre>';
 			print_r($ParameterArray);
 			echo '</pre>';
-			echo '<pre>' . htmlspecialchars($this->_SoapClient->request, ENT_QUOTES) . '</pre>';
+			echo '<pre>' . htmlspecialchars($this->_SoapClient->__getLastRequest(), ENT_QUOTES) . '</pre>';
 			echo '<h2>Response</h2>';
 			echo '<pre>';
 			print_r($result);
 			echo '</pre>';
-			echo '<pre>' . htmlspecialchars($this->_SoapClient->response, ENT_QUOTES) . '</pre>';
+			echo '<pre>' . htmlspecialchars($this->_SoapClient->getHTTPContentType(), ENT_QUOTES) . '</pre>';
 
 			echo '</div>';
 
 		}
 
-		return $result;
+		return $result->{$methodName.'Result'};
 	}
 
 	/**
