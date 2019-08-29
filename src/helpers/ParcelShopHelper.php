@@ -1,8 +1,8 @@
 <?php
 
-namespace Ernadoo\MondialRelay\helpers;
+namespace ErnadoO\MondialRelay\helpers;
 
-use Ernadoo\MondialRelay\dto\{ParcelShop, TimeSlot};
+use ErnadoO\MondialRelay\dto\{ParcelShop, TimeSlot};
 
 class ParcelShopHelper
 {

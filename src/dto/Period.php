@@ -1,6 +1,6 @@
 <?php
 
-namespace Ernadoo\MondialRelay\dto;
+namespace ErnadoO\MondialRelay\dto;
 
 class Period
 {

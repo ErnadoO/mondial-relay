@@ -1,9 +1,9 @@
 <?php
 
-namespace Ernadoo\MondialRelay;
+namespace ErnadoO\MondialRelay;
 
-use Ernadoo\MondialRelay\dto\{RegisteredParcelStatusData, RegisteredShipmentData};
-use Ernadoo\MondialRelay\helpers\{ApiHelper, ParcelShopHelper};
+use ErnadoO\MondialRelay\dto\{RegisteredParcelStatusData, RegisteredShipmentData};
+use ErnadoO\MondialRelay\helpers\{ApiHelper, ParcelShopHelper};
 
 /**
  * API Mondial Relay
@@ -133,7 +133,8 @@ class MondialRelayWebAPI {
 	*/
 	public function SearchParcelShop($params)
 	{
-		try {
+		try
+		{
 			$result = $this->CallWebApi('WSI4_PointRelais_Recherche', $this->AddSecurityCode($params));
 
 			foreach($result->PointsRelais->PointRelais_Details as $val)
@@ -619,7 +620,6 @@ class MondialRelayWebAPI {
 	*/
 	private function CallWebApi($methodName, $ParameterArray)
 	{
-		//$result = $this->_SoapClient->call($methodName, $ParameterArray, $this->_APIEndPointUrlV1 , $this->_APIEndPointUrlV1 . $methodName);
 		$result = $this->_SoapClient->{$methodName}($ParameterArray);
 
 		// Display the request and response

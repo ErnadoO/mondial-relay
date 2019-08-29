@@ -1,6 +1,6 @@
 <?php
 
-namespace Ernadoo\MondialRelay\helpers;
+namespace ErnadoO\MondialRelay\helpers;
 
 class ApiHelper
 {
