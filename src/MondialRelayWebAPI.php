@@ -1,9 +1,9 @@
 <?php
 
-namespace ErnadoO\MondialRelay;
+namespace Ernadoo\MondialRelay;
 
-use ErnadoO\MondialRelay\dto\{RegisteredParcelStatusData, RegisteredShipmentData};
-use ErnadoO\MondialRelay\helpers\{ApiHelper, ParcelShopHelper};
+use Ernadoo\MondialRelay\dto\{RegisteredParcelStatusData, RegisteredShipmentData};
+use Ernadoo\MondialRelay\helpers\{ApiHelper, ParcelShopHelper};
 
 /**
  * API Mondial Relay

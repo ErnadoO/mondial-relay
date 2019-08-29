@@ -1,6 +1,6 @@
 <?php
 
-namespace ErnadoO\MondialRelay\dto;
+namespace Ernadoo\MondialRelay\dto;
 
 class ShipmentInfo
 {
