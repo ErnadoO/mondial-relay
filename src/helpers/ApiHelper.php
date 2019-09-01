@@ -17,10 +17,10 @@ class ApiHelper
 		$_status[8] = "Incorrect password or hash";
 		$_status[9] = "Unknown or not unique city";
 		$_status[10] = "Incorrect type of collection";
-		$_status[11] = "Point Relais collection number incorrect";
-		$_status[12] = "Point Relais collection country.incorrect";
+		$_status[11] = "Point Relais® collection number incorrect";
+		$_status[12] = "Point Relais® collection country.incorrect";
 		$_status[13] = "Incorrect type of delivery";
-		$_status[14] = "Incorrect delivery Point Relais� number";
+		$_status[14] = "Incorrect delivery Point Relais® number";
 		$_status[15] = "Point Relais delivery country.incorrect";
 		$_status[16] = "";
 		$_status[17] = "";
@@ -54,7 +54,7 @@ class ApiHelper
 		$_status[45] = "Incorrect shipment value currency";
 		$_status[46] = "End of shipments number range reached";
 		$_status[47] = "Incorrect number of parcels";
-		$_status[48] = "Multi-Parcel not permitted at Point Relais�";
+		$_status[48] = "Multi-Parcel not permitted at Point Relais®";
 		$_status[49] = "Incorrect action";
 		$_status[50] = "";
 		$_status[51] = "";
@@ -76,7 +76,7 @@ class ApiHelper
 		$_status[67] = "Incorrect latitude";
 		$_status[68] = "Incorrect longitude";
 		$_status[69] = "Incorrect merchant code";
-		$_status[70] = "Incorrect Point Relais� number";
+		$_status[70] = "Incorrect Point Relais® number";
 		$_status[71] = "Incorrect Nature de point de vente non valide";
 		$_status[72] = "";
 		$_status[73] = "";
@@ -100,7 +100,7 @@ class ApiHelper
 		$_status[91] = "";
 		$_status[92] = "";
 		$_status[93] = "No information given by the sorting plan. If you want to do a collection or delivery at Point Relais, please check it is avalaible.".
-						"If you want to do a home delivery, please check if the zipcode exists.";
+			"If you want to do a home delivery, please check if the zipcode exists.";
 		$_status[94] = "Unknown parcel";
 		$_status[95] = "Merchant account not activated";
 		$_status[96] = "";
