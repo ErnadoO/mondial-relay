@@ -13,7 +13,8 @@
 	],
 	"require" : {
 		"php" : "^7.1",
-		"ext-soap": "*"
+		"ext-soap": "*",
+		"symfony/stopwatch" : "^5.0"
 	},
 	"config" : {
 		"sort-packages" : true

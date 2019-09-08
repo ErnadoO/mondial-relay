@@ -4,6 +4,7 @@ namespace Ernadoo\MondialRelay;
 
 use Ernadoo\MondialRelay\dto\RegisteredShipmentData;
 use Ernadoo\MondialRelay\helpers\{ApiHelper, ParcelShopHelper};
+use Symfony\Component\Stopwatch\{Stopwatch, StopwatchEvent};
 
 /**
  * API Mondial Relay
@@ -67,6 +68,22 @@ class MondialRelayWebAPI
 	 */
 	private $_Api_Password = "";
 
+
+	/**
+	 * @var array $profiles Profiled data
+	 */
+	protected $profiles = array();
+
+	/**
+	 * @var Stopwatch $stopwatch Symfony profiler Stopwatch service
+	 */
+	protected $stopwatch;
+
+	/**
+	 * @var integer
+	 */
+	protected $counter = 1;
+
 	/**
 	 * Debug mode enabled or not
 	 * @var boolean
@@ -83,8 +100,9 @@ class MondialRelayWebAPI
 	* @param	string $ApiBrandId Mondial Relay API Numeric Brand ID (2 digits) (provided by your technical contact)
 	* @access   public
 	*/
-	public function __construct($wsdl, $customerCode, $secretKey, $BrandId = 11)
+	public function __construct(Stopwatch $stopwatch, $wsdl, $customerCode, $secretKey, $BrandId = 11)
 	{
+		$this->stopwatch			= $stopwatch;
 		$this->_SoapClient			= new \SoapClient($wsdl, ['trace' => true]);
 		$this->_Api_CustomerCode	= $customerCode;
 		$this->_Api_SecretKey		= $secretKey;
@@ -93,6 +111,11 @@ class MondialRelayWebAPI
 
 	public function __destruct()
 	{
+	}
+
+	public function getProfiles()
+	{
+		return $this->profiles;
 	}
 
 	/**
@@ -178,7 +201,7 @@ class MondialRelayWebAPI
 
 		foreach($ShipmentDetails['Parcels'] as $parcel)
 		{
-			$WeightInGr += $parcel->WeightInGr;
+			$WeightInGr += $parcel['WeightInGr'];
 		}
 
 		$params = array(
@@ -359,6 +382,9 @@ class MondialRelayWebAPI
 	*/
 	private function CallWebApi($methodName, $ParameterArray)
 	{
+
+		$event = $this->startProfiling($ParameterArray);
+
 		$result = $this->_SoapClient->{$methodName}($ParameterArray);
 
 		// Display the request and response
@@ -386,7 +412,10 @@ class MondialRelayWebAPI
 		if ($ApiResult->STAT != '0')
 		{
 			throw new \SoapFault($ApiResult->STAT, ApiHelper::GetStatusCode($result));
+			$this->stopProfiling($event, $ApiResult);
 		}
+
+		$this->stopProfiling($event, $ApiResult);
 
 		return $result->{$methodName.'Result'};
 	}
@@ -401,5 +430,52 @@ class MondialRelayWebAPI
 	public function BuildStickersLink($StickersResult)
 	{
 		return $this->_MRStickersUrl . $StickersResult->URL_Etiquette;
+	}
+
+	/**
+	 * Starts profiling
+	 *
+	 * @param string $query Query text
+	 *
+	 * @return StopwatchEvent
+	 */
+	protected function startProfiling($query)
+	{
+		if ($this->stopwatch instanceof Stopwatch) {
+			$this->profiles[$this->counter] = array(
+				'query'        => $query,
+				'duration'     => null,
+				'memory_start' => memory_get_usage(true),
+				'memory_end'   => null,
+				'memory_peak'  => null,
+				'result'		=> null,
+			);
+
+			return $this->stopwatch->start('mr');
+		}
+	}
+
+	/**
+	 * Stops the profiling
+	 *
+	 * @param StopwatchEvent $event A stopwatchEvent instance
+	 */
+	protected function stopProfiling(StopwatchEvent $event = null, $result)
+	{
+		if ($this->stopwatch instanceof Stopwatch) {
+			$event->stop();
+
+			$values = array(
+				'duration'    => $event->getDuration(),
+				'memory_end'  => memory_get_usage(true),
+				'memory_peak' => memory_get_peak_usage(true),
+				'result'	=> $result,
+				'resultCount' => 1,
+			);
+
+			$this->profiles[$this->counter] = array_merge($this->profiles[$this->counter], $values);
+
+			$this->counter++;
+		}
 	}
 }
