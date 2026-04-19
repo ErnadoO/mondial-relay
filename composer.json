@@ -1,27 +1,40 @@
 {
-	"name" : "ernadoo/mondial-relay",
-	"type": "library",
-	"description" : "Mondial Relay API",
-	"keywords" : [
-		"Mondial Relay"
-	],
-	"license" : "MIT",
-	"authors" : [{
-			"name" : "Erwan Nader",
-			"role" : "Developer"
-		}
-	],
-	"require" : {
-		"php" : "^7.1",
-		"ext-soap": "*",
-		"symfony/stopwatch" : "^5.0"
-	},
-	"config" : {
-		"sort-packages" : true
-	},
-	"autoload" : {
-		"psr-4" : {
-			"Ernadoo\\MondialRelay\\" : "src/"
-		}
-	}
+    "name": "ernadoo/mondial-relay",
+    "type": "library",
+    "description": "Mondial Relay API client — V2 REST (label creation) + SOAP (relay point search)",
+    "keywords": ["mondial-relay", "shipping", "carrier", "label", "relay-point"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Erwan Nader",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "ext-curl": "*",
+        "ext-soap": "*",
+        "ext-simplexml": "*"
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^1.11",
+        "phpunit/phpunit": "^11.0"
+    },
+    "scripts": {
+        "test": "phpunit",
+        "phpstan": "phpstan analyse"
+    },
+    "autoload": {
+        "psr-4": {
+            "Ernadoo\\MondialRelay\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Ernadoo\\MondialRelay\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    }
 }
