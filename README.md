@@ -8,13 +8,16 @@ PHP client for the Mondial Relay shipping API. Framework-agnostic.
 ## Requirements
 
 - PHP 8.2+
-- `ext-curl`, `ext-soap`, `ext-simplexml`
+- `ext-soap`, `ext-simplexml`
+- Any PSR-18 HTTP client with PSR-17 factories (e.g. `symfony/http-client`, `guzzlehttp/guzzle`)
 
 ## Installation
 
 ```bash
-composer require ernadoo/mondial-relay
+composer require ernadoo/mondial-relay symfony/http-client nyholm/psr7
 ```
+
+> Using Symfony? The [mondial-relay-bundle](https://github.com/ErnadoO/mondial-relay-bundle) wires everything for you.
 
 ## Quick start
 
@@ -25,7 +28,12 @@ use Ernadoo\MondialRelay\Shipment\DeliveryMode;
 use Ernadoo\MondialRelay\Shipment\Parcel;
 use Ernadoo\MondialRelay\Shipment\ShipmentRequest;
 
+$psr18 = new \Symfony\Component\HttpClient\Psr18Client(); // PSR-18 client + PSR-17 factories
+
 $client = MondialRelayClient::create(
+    httpClient:     $psr18,
+    requestFactory: $psr18,
+    streamFactory:  $psr18,
     login:      'YOUR_LOGIN',
     password:   'YOUR_PASSWORD',
     customerId: 'YOUR_CUSTOMER_ID',

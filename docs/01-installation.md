@@ -6,6 +6,9 @@
 composer require ernadoo/mondial-relay
 ```
 
+The library talks HTTP through [PSR-18](https://www.php-fig.org/psr/psr-18/): install any compatible client,
+for example `composer require symfony/http-client nyholm/psr7` or `composer require guzzlehttp/guzzle`.
+
 ## API credentials
 
 You need two sets of credentials:
@@ -22,8 +25,14 @@ You need two sets of credentials:
 ```php
 use Ernadoo\MondialRelay\MondialRelayClient;
 
-// Quick factory — suitable for most projects
+// Quick factory — suitable for most projects.
+// Symfony's Psr18Client implements the PSR-18 client and both PSR-17 factories.
+$psr18 = new \Symfony\Component\HttpClient\Psr18Client();
+
 $client = MondialRelayClient::create(
+    httpClient:     $psr18,
+    requestFactory: $psr18,
+    streamFactory:  $psr18,
     login:      'YOUR_LOGIN',
     password:   'YOUR_PASSWORD',
     customerId: 'YOUR_CUSTOMER_ID',
@@ -32,7 +41,7 @@ $client = MondialRelayClient::create(
 );
 ```
 
-If you need to inject a custom HTTP transport (for testing or to use Symfony HttpClient):
+To assemble the clients yourself (e.g. with Guzzle, or a mock PSR-18 client in tests):
 
 ```php
 use Ernadoo\MondialRelay\Client\RestShipmentClient;
@@ -40,7 +49,7 @@ use Ernadoo\MondialRelay\Client\SoapParcelShopClient;
 use Ernadoo\MondialRelay\MondialRelayClient;
 
 $client = new MondialRelayClient(
-    new RestShipmentClient('login', 'password', 'CUSTOMER_ID', sandbox: false, transport: $myTransport),
+    new RestShipmentClient($httpClient, $requestFactory, $streamFactory, 'login', 'password', 'CUSTOMER_ID', sandbox: false),
     new SoapParcelShopClient('CUSTOMER_ID', 'SECRET_KEY'),
 );
 ```

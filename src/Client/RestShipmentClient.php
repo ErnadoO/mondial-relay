@@ -135,10 +135,15 @@ final class RestShipmentClient implements ShipmentClientInterface
     /** @internal Exposed for testing. */
     public function parseResponse(string $body, OutputType $outputType): ShipmentResponse
     {
+        // Collect libxml errors instead of emitting PHP warnings: the exception below is enough.
+        $previous = libxml_use_internal_errors(true);
         try {
             $xml = new \SimpleXMLElement($body);
         } catch (\Exception $e) {
             throw new MondialRelayException('Invalid XML response from Mondial Relay API: '.$e->getMessage(), 0, $e);
+        } finally {
+            libxml_clear_errors();
+            libxml_use_internal_errors($previous);
         }
 
         $errors = [];
