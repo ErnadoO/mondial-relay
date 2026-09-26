@@ -28,6 +28,36 @@ final class SoapParcelShopClient implements ParcelShopClientInterface
     }
 
     /**
+     * Signed parameters of WSI4_PointRelais_Recherche.
+     *
+     * Mondial Relay signs the concatenation of every parameter, in this exact order: any other
+     * order, or an extra parameter, is rejected with STAT 97 "Incorrect security key".
+     *
+     * @internal Exposed for testing.
+     *
+     * @return array<string, string>
+     */
+    public function buildSearchParameters(ParcelShopSearchRequest $request): array
+    {
+        return $this->addSecurity([
+            'Pays'            => $request->countryCode,
+            'NumPointRelais'  => '',
+            'Ville'           => '',
+            'CP'              => $request->postCode,
+            'Latitude'        => '',
+            'Longitude'       => '',
+            'Taille'          => '',
+            'Poids'           => $request->weightGrams > 0 ? (string) $request->weightGrams : '',
+            'Action'          => $request->deliveryMode->value,
+            'DelaiEnvoi'      => (string) $request->sendDelayDays,
+            'RayonRecherche'  => (string) $request->searchDistanceKm,
+            'TypeActivite'    => '',
+            'NACE'            => '',
+            'NombreResultats' => (string) $request->maxResults,
+        ]);
+    }
+
+    /**
      * @return ParcelShop[]
      *
      * @throws ApiException
@@ -35,19 +65,7 @@ final class SoapParcelShopClient implements ParcelShopClientInterface
      */
     public function search(ParcelShopSearchRequest $request): array
     {
-        $params = [
-            'Pays'             => $request->countryCode,
-            'CP'               => $request->postCode,
-            'Action'           => $request->deliveryMode->value,
-            'Taille'           => '',
-            'Poids'            => $request->weightGrams > 0 ? (string) $request->weightGrams : '',
-            'RayonRecherche'   => (string) $request->searchDistanceKm,
-            'NombreResultats'  => (string) $request->maxResults,
-            'DelaiEnvoi'       => (string) $request->sendDelayDays,
-            'Langue'           => 'FR',
-        ];
-
-        $params = $this->addSecurity($params);
+        $params = $this->buildSearchParameters($request);
 
         try {
             $result = $this->getSoapClient()->WSI4_PointRelais_Recherche($params);
@@ -109,17 +127,18 @@ final class SoapParcelShopClient implements ParcelShopClientInterface
             }
         }
 
+        // Text fields are padded with spaces; Distance is in metres.
         return new ParcelShop(
-            id: (string) ($point->Num ?? ''),
-            name: (string) ($point->LgAdr1 ?? ''),
-            address1: (string) ($point->LgAdr3 ?? ''),
-            address2: (string) ($point->LgAdr4 ?? ''),
-            postCode: (string) ($point->CP ?? ''),
-            city: (string) ($point->Ville ?? ''),
-            countryCode: (string) ($point->Pays ?? ''),
+            id: trim((string) ($point->Num ?? '')),
+            name: trim((string) ($point->LgAdr1 ?? '')),
+            address1: trim((string) ($point->LgAdr3 ?? '')),
+            address2: trim((string) ($point->LgAdr4 ?? '')),
+            postCode: trim((string) ($point->CP ?? '')),
+            city: trim((string) ($point->Ville ?? '')),
+            countryCode: trim((string) ($point->Pays ?? '')),
             latitude: (float) str_replace(',', '.', (string) ($point->Latitude ?? '0')),
             longitude: (float) str_replace(',', '.', (string) ($point->Longitude ?? '0')),
-            distanceKm: (float) str_replace(',', '.', (string) ($point->Distance ?? '0')),
+            distanceKm: (float) str_replace(',', '.', (string) ($point->Distance ?? '0')) / 1000,
             openingHours: $hours,
             pictureUrl: (string) ($point->URL_Photo ?? ''),
         );
@@ -131,7 +150,8 @@ final class SoapParcelShopClient implements ParcelShopClientInterface
      */
     private function addSecurity(array $params): array
     {
-        $params = array_merge(['Enseigne' => $this->customerId], $params);
+        // The brand code is always 8 characters, padded with spaces (e.g. "BDTEST  ")
+        $params = array_merge(['Enseigne' => str_pad($this->customerId, 8)], $params);
         $chain = implode('', $params).$this->secretKey;
 
         $params['Security'] = strtoupper(md5(mb_convert_encoding($chain, 'ISO-8859-1', 'UTF-8')));
@@ -152,15 +172,82 @@ final class SoapParcelShopClient implements ParcelShopClientInterface
         return $this->soapClient;
     }
 
+    /** Official STAT messages (Mondial Relay PHP SDK, ApiHelper::GetStatusCode). */
     private function statMessage(string $stat): string
     {
         return match ($stat) {
-            '1'  => 'Invalid brand',
-            '2'  => 'Brand number empty or unknown',
-            '8'  => 'Invalid password or hash',
-            '9'  => 'City not recognised or not unique',
-            '97' => 'Invalid security key',
-            '99' => 'Mondial Relay service generic error',
+            '0' => 'Successfull operation',
+            '1' => 'Incorrect merchant',
+            '2' => 'Merchant number empty',
+            '3' => 'Incorrect merchant account number',
+            '5' => 'Incorrect Merchant shipment reference',
+            '7' => 'Incorrect Consignee reference',
+            '8' => 'Incorrect password or hash',
+            '9' => 'Unknown or not unique city',
+            '10' => 'Incorrect type of collection',
+            '11' => 'Point Relais collection number incorrect',
+            '12' => 'Point Relais collection country.incorrect',
+            '13' => 'Incorrect type of delivery',
+            '14' => 'Incorrect delivery Point Relais number',
+            '15' => 'Point Relais delivery country.incorrect',
+            '20' => 'Incorrect parcel weight',
+            '21' => 'Incorrect developped lenght (length + height)',
+            '22' => 'Incorrect parcel size',
+            '24' => 'Incorrect shipment number',
+            '25' => 'Not enougth money on your acount to register this shipment',
+            '26' => 'Incorrect assembly time',
+            '27' => 'Incorrect mode of collection or delivery',
+            '28' => 'Incorrect mode of collection',
+            '29' => 'Incorrect mode of delivery',
+            '30' => 'Incorrect address (L1)',
+            '31' => 'Incorrect address (L2)',
+            '33' => 'Incorrect address (L3)',
+            '34' => 'Incorrect address (L4)',
+            '35' => 'Incorrect city',
+            '36' => 'Incorrect zipcode',
+            '37' => 'Incorrect country',
+            '38' => 'Incorrect phone number',
+            '39' => 'Incorrect e-mail',
+            '40' => 'Missing parameters',
+            '42' => 'Incorrect COD value',
+            '43' => 'Incorrect COD currency',
+            '44' => 'Incorrect shipment value',
+            '45' => 'Incorrect shipment value currency',
+            '46' => 'End of shipments number range reached',
+            '47' => 'Incorrect number of parcels',
+            '48' => 'Multi-Parcel not permitted at Point Relais',
+            '49' => 'Incorrect action',
+            '60' => 'Incorrect text field (this error code has no impact)',
+            '61' => 'Incorrect notification request',
+            '62' => 'Incorrect extra delivery information',
+            '63' => 'Incorrect insurance',
+            '64' => 'Incorrect assembly time',
+            '65' => 'Incorrect appointement',
+            '66' => 'Incorrect take back',
+            '67' => 'Incorrect latitude',
+            '68' => 'Incorrect longitude',
+            '69' => 'Incorrect merchant code',
+            '70' => 'Incorrect Point Relais number',
+            '71' => 'Incorrect Nature de point de vente non valide',
+            '74' => 'Incorrect language',
+            '78' => 'Incorrect country of collection',
+            '79' => 'Incorrect country of delivery',
+            '80' => 'Tracking code : Recorded parcel',
+            '81' => 'Tracking code : Parcel in process at Mondial Relay',
+            '82' => 'Tracking code : Delivered parcel',
+            '83' => 'Tracking code : Anomaly',
+            '84' => '(Reserved tracking code)',
+            '85' => '(Reserved tracking code)',
+            '86' => '(Reserved tracking code)',
+            '87' => '(Reserved tracking code)',
+            '88' => '(Reserved tracking code)',
+            '89' => '(Reserved tracking code)',
+            '93' => 'No information given by the sorting plan. If you want to do a collection or delivery at Point Relais, please check it is avalaible.',
+            '94' => 'Unknown parcel',
+            '95' => 'Merchant account not activated',
+            '97' => 'Incorrect security key',
+            '98' => 'Generic error (Incorrect parameters)',
+            '99' => 'Generic error of service system',
             default => sprintf('STAT error %s', $stat),
         };
     }

@@ -16,6 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Successful responses were rejected: the shipment number is returned as an attribute
   (`<Shipment ShipmentNumber="…">`), and the success status (`Code="0"`, which carries an
   informative message in the sandbox) was treated as an error.
+- Relay point search always failed with STAT 97 "Incorrect security key": the signed parameters
+  of `WSI4_PointRelais_Recherche` were incomplete and out of order. They now follow the order
+  signed by Mondial Relay, and the brand code is padded to 8 characters.
+- Relay points: distances were returned in metres as kilometres (×1000), and names, addresses
+  and cities kept their padding spaces.
+- STAT errors use the official Mondial Relay messages (e.g. 95 "Merchant account not activated").
 - Parcel dimensions were sent after the weight: elements now follow the order of the official XSD
   (Content, Length, Width, Depth, Weight).
 - Tests use real responses of the Mondial Relay sandbox. Verified end to end against the sandbox:
