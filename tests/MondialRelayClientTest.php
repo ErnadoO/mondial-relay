@@ -89,6 +89,21 @@ final class MondialRelayClientTest extends TestCase
         self::assertSame('FR-066974', $shop->locationCode());
     }
 
+    public function testLoggerIsPassedToBothClients(): void
+    {
+        $psr17 = new \Nyholm\Psr7\Factory\Psr17Factory();
+        $http = $this->createStub(\Psr\Http\Client\ClientInterface::class);
+        $client = MondialRelayClient::create($http, $psr17, $psr17, 'login', 'password', 'CUSTOMER', 'SECRET');
+        $logger = new \Ernadoo\MondialRelay\Tests\Support\InMemoryLogger();
+
+        $client->setLogger($logger);
+
+        foreach (['shipmentClient', 'parcelShopClient'] as $property) {
+            $inner = (new \ReflectionProperty($client, $property))->getValue($client);
+            self::assertSame($logger, (new \ReflectionProperty($inner, 'logger'))->getValue($inner), $property);
+        }
+    }
+
     private function makeAddress(): Address
     {
         return new Address(

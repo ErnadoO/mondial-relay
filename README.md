@@ -226,6 +226,22 @@ try {
 `ApiException` extends `MondialRelayException`: catch `MondialRelayException` alone to handle every
 failure. The same applies to `searchParcelShops()`.
 
+## Logging
+
+Pass any [PSR-3](https://www.php-fig.org/psr/psr-3/) logger (Monolog…):
+
+```php
+$client->setLogger($logger);
+```
+
+| Level | Logged |
+|---|---|
+| `info` | Shipment created (number, delivery mode, relay point), relay point search (result count) |
+| `warning` | Non-blocking warnings returned by Mondial Relay (code and message) |
+| `error` | Rejections with the Mondial Relay codes and messages, HTTP failures |
+
+Credentials, request and response bodies, and addresses are never logged.
+
 ## Tests
 
 ```bash

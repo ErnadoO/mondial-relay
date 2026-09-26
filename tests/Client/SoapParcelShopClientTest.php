@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Ernadoo\MondialRelay\Tests\Client;
 
 use Ernadoo\MondialRelay\Client\SoapParcelShopClient;
+use Ernadoo\MondialRelay\Exception\ApiException;
 use Ernadoo\MondialRelay\ParcelShop\ParcelShopSearchRequest;
+use Ernadoo\MondialRelay\Tests\Support\InMemoryLogger;
 use Ernadoo\MondialRelay\Shipment\DeliveryMode;
 use PHPUnit\Framework\TestCase;
 
@@ -53,6 +55,52 @@ final class SoapParcelShopClientTest extends TestCase
         );
         self::assertSame('CC12345 ', $params['Enseigne'], 'Brand code padded to 8 characters');
         self::assertSame(strtoupper(md5('CC12345 FR5900024R0107SECRET')), $params['Security']);
+    }
+
+    public function testRejectedSearchIsLoggedWithoutTheSecretKey(): void
+    {
+        $client = $this->clientAnswering((object) ['WSI4_PointRelais_RechercheResult' => (object) ['STAT' => '97']]);
+        $client->setLogger($logger = new InMemoryLogger());
+
+        try {
+            $client->search(new ParcelShopSearchRequest('FR', '59000'));
+            self::fail('ApiException expected');
+        } catch (ApiException) {
+        }
+
+        $errors = $logger->recordsOfLevel('error');
+        self::assertCount(1, $errors);
+        self::assertSame(['97' => 'Incorrect security key'], $errors[0]['context']['errors']);
+        self::assertStringNotContainsString('SECRET', $logger->dump());
+    }
+
+    public function testSuccessfulSearchIsLogged(): void
+    {
+        $client = $this->clientAnswering((object) ['WSI4_PointRelais_RechercheResult' => (object) ['STAT' => '0']]);
+        $client->setLogger($logger = new InMemoryLogger());
+
+        self::assertSame([], $client->search(new ParcelShopSearchRequest('FR', '59000')));
+        self::assertSame(0, $logger->recordsOfLevel('info')[0]['context']['results']);
+    }
+
+    /** Client whose SOAP call returns $result, without network. */
+    private function clientAnswering(object $result): SoapParcelShopClient
+    {
+        $client = new SoapParcelShopClient('CC12345', 'SECRET');
+        $soap = new class($result) extends \SoapClient {
+            public function __construct(private readonly object $result)
+            {
+                parent::__construct(null, ['location' => 'http://localhost', 'uri' => 'urn:test']);
+            }
+
+            public function __call(string $name, array $args): mixed
+            {
+                return $this->result;
+            }
+        };
+        (new \ReflectionProperty($client, 'soapClient'))->setValue($client, $soap);
+
+        return $client;
     }
 
     public function testUnknownMerchantAccountStatusHasTheOfficialMessage(): void

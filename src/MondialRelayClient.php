@@ -18,13 +18,27 @@ use Ernadoo\MondialRelay\Shipment\ShipmentResponse;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\StreamFactoryInterface;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerInterface;
 
-final class MondialRelayClient implements MondialRelayClientInterface
+final class MondialRelayClient implements MondialRelayClientInterface, LoggerAwareInterface
 {
     public function __construct(
         private readonly ShipmentClientInterface $shipmentClient,
         private readonly ParcelShopClientInterface $parcelShopClient,
     ) {
+    }
+
+    /**
+     * Logs API errors, warnings and created shipments (never credentials nor addresses).
+     */
+    public function setLogger(LoggerInterface $logger): void
+    {
+        foreach ([$this->shipmentClient, $this->parcelShopClient] as $client) {
+            if ($client instanceof LoggerAwareInterface) {
+                $client->setLogger($logger);
+            }
+        }
     }
 
     /**

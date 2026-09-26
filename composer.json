@@ -18,11 +18,12 @@
     ],
     "require": {
         "php": "^8.2",
-        "ext-soap": "*",
         "ext-simplexml": "*",
+        "ext-soap": "*",
         "psr/http-client": "^1.0",
         "psr/http-factory": "^1.1",
-        "psr/http-message": "^1.1 || ^2.0"
+        "psr/http-message": "^1.1 || ^2.0",
+        "psr/log": "^2.0 || ^3.0"
     },
     "require-dev": {
         "nyholm/psr7": "^1.8.2",

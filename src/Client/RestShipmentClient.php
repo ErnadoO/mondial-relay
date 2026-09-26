@@ -15,6 +15,10 @@ use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\StreamFactoryInterface;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 /**
  * Creates shipment labels via the Mondial Relay V2 REST API.
@@ -28,8 +32,10 @@ use Psr\Http\Message\StreamFactoryInterface;
  *   $psr18 = new \Symfony\Component\HttpClient\Psr18Client();
  *   new RestShipmentClient($psr18, $psr18, $psr18, ...);
  */
-final class RestShipmentClient implements ShipmentClientInterface
+final class RestShipmentClient implements ShipmentClientInterface, LoggerAwareInterface
 {
+    use LoggerAwareTrait;
+
     private const PRODUCTION_URL = 'https://connect-api.mondialrelay.com/api/shipment';
     private const SANDBOX_URL    = 'https://connect-api-sandbox.mondialrelay.com/api/shipment';
     private const TRACKING_URL   = 'https://www.mondialrelay.fr/suivi-de-colis/?numeroExpedition=%s';
@@ -64,20 +70,43 @@ final class RestShipmentClient implements ShipmentClientInterface
             ->withHeader('Accept', 'application/xml')
             ->withBody($body);
 
+        // Never log the request or response body: Mondial Relay echoes the credentials in it.
+        $context = [
+            'delivery_mode'     => $request->deliveryMode->value,
+            'delivery_location' => $request->deliveryLocation,
+            'parcels'           => count($request->parcels),
+            'sandbox'           => $this->sandbox,
+        ];
+
         try {
-            $psrRes = $this->client->sendRequest($psrReq);
-        } catch (ClientExceptionInterface $e) {
-            throw new MondialRelayException('HTTP error: '.$e->getMessage(), 0, $e);
+            try {
+                $psrRes = $this->client->sendRequest($psrReq);
+            } catch (ClientExceptionInterface $e) {
+                throw new MondialRelayException('HTTP error: '.$e->getMessage(), 0, $e);
+            }
+
+            $statusCode = $psrRes->getStatusCode();
+            if ($statusCode >= 400) {
+                throw new MondialRelayException(sprintf('HTTP %d from Mondial Relay API.', $statusCode));
+            }
+
+            $response = $this->parseResponse((string) $psrRes->getBody(), $request->outputType);
+        } catch (ApiException $e) {
+            $this->logger()->error('Mondial Relay rejected the shipment.', $context + ['errors' => $e->getErrors()]);
+            throw $e;
+        } catch (MondialRelayException $e) {
+            $this->logger()->error('Mondial Relay shipment creation failed: {error}', $context + ['error' => $e->getMessage()]);
+            throw $e;
         }
 
-        $statusCode = $psrRes->getStatusCode();
-        if ($statusCode >= 400) {
-            throw new MondialRelayException(
-                sprintf('HTTP %d from Mondial Relay API: %s', $statusCode, mb_substr((string) $psrRes->getBody(), 0, 300))
-            );
-        }
+        $this->logger()->info('Mondial Relay shipment {shipment_number} created.', $context + ['shipment_number' => $response->shipmentNumber]);
 
-        return $this->parseResponse((string) $psrRes->getBody(), $request->outputType);
+        return $response;
+    }
+
+    private function logger(): LoggerInterface
+    {
+        return $this->logger ??= new NullLogger();
     }
 
     /** @internal Exposed for testing. */
@@ -153,9 +182,16 @@ final class RestShipmentClient implements ShipmentClientInterface
         $errors = [];
         if (isset($xml->StatusList->Status)) {
             foreach ($xml->StatusList->Status as $status) {
-                $code = (string) ($status['Code'] ?? '');
-                if ('' !== $code && self::isBlocking($code, (string) ($status['Level'] ?? ''))) {
-                    $errors[$code] = (string) ($status['Message'] ?? $code);
+                $code    = (string) ($status['Code'] ?? '');
+                $message = (string) ($status['Message'] ?? $code);
+                if ('' === $code) {
+                    continue;
+                }
+                if (self::isBlocking($code, (string) ($status['Level'] ?? ''))) {
+                    $errors[$code] = $message;
+                } elseif ('0' !== $code) {
+                    // Accepted, but Mondial Relay flagged something (e.g. an ignored field)
+                    $this->logger()->warning('Mondial Relay warning {code}: {message}', ['code' => $code, 'message' => $message]);
                 }
             }
         }

@@ -8,6 +8,10 @@ use Ernadoo\MondialRelay\Exception\ApiException;
 use Ernadoo\MondialRelay\Exception\MondialRelayException;
 use Ernadoo\MondialRelay\ParcelShop\ParcelShop;
 use Ernadoo\MondialRelay\ParcelShop\ParcelShopSearchRequest;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 /**
  * Searches for relay points via the Mondial Relay SOAP API.
@@ -15,8 +19,10 @@ use Ernadoo\MondialRelay\ParcelShop\ParcelShopSearchRequest;
  * Note: Mondial Relay has not yet exposed relay point search in the V2 REST API.
  * This client uses the legacy SOAP endpoint which is still actively maintained.
  */
-final class SoapParcelShopClient implements ParcelShopClientInterface
+final class SoapParcelShopClient implements ParcelShopClientInterface, LoggerAwareInterface
 {
+    use LoggerAwareTrait;
+
     private const WSDL = 'https://api.mondialrelay.com/Web_Services.asmx?wsdl';
 
     private ?\SoapClient $soapClient = null;
@@ -64,6 +70,36 @@ final class SoapParcelShopClient implements ParcelShopClientInterface
      * @throws MondialRelayException
      */
     public function search(ParcelShopSearchRequest $request): array
+    {
+        $context = ['country' => $request->countryCode, 'delivery_mode' => $request->deliveryMode->value];
+
+        try {
+            $results = $this->doSearch($request);
+        } catch (ApiException $e) {
+            $this->logger()->error('Mondial Relay rejected the relay point search.', $context + ['errors' => $e->getErrors()]);
+            throw $e;
+        } catch (MondialRelayException $e) {
+            $this->logger()->error('Mondial Relay relay point search failed: {error}', $context + ['error' => $e->getMessage()]);
+            throw $e;
+        }
+
+        $this->logger()->info('Mondial Relay relay point search: {results} result(s).', $context + ['results' => count($results)]);
+
+        return $results;
+    }
+
+    private function logger(): LoggerInterface
+    {
+        return $this->logger ??= new NullLogger();
+    }
+
+    /**
+     * @return ParcelShop[]
+     *
+     * @throws ApiException
+     * @throws MondialRelayException
+     */
+    private function doSearch(ParcelShopSearchRequest $request): array
     {
         $params = $this->buildSearchParameters($request);
 

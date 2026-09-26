@@ -14,6 +14,7 @@ use Ernadoo\MondialRelay\Shipment\OutputFormat;
 use Ernadoo\MondialRelay\Shipment\OutputType;
 use Ernadoo\MondialRelay\Shipment\Parcel;
 use Ernadoo\MondialRelay\Shipment\ShipmentRequest;
+use Ernadoo\MondialRelay\Tests\Support\InMemoryLogger;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\Response;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -286,6 +287,51 @@ final class RestShipmentClientTest extends TestCase
         } catch (ApiException $e) {
             self::assertArrayHasKey($code, $e->getErrors());
         }
+    }
+
+    public function testCreatedShipmentIsLoggedWithoutCredentials(): void
+    {
+        [$client] = $this->makeClient((string) file_get_contents(__DIR__.'/../Fixtures/sandbox-shipment-success.xml'));
+        $client->setLogger($logger = new InMemoryLogger());
+
+        $client->createShipment($this->makeRequest('FR-018332'));
+
+        $info = $logger->recordsOfLevel('info');
+        self::assertCount(1, $info);
+        self::assertSame('00544601', $info[0]['context']['shipment_number']);
+        self::assertSame('FR-018332', $info[0]['context']['delivery_location']);
+        self::assertStringNotContainsString('password', $logger->dump());
+        self::assertStringNotContainsString('login', $logger->dump());
+    }
+
+    public function testRejectionIsLoggedAsAnErrorWithTheApiCodes(): void
+    {
+        [$client] = $this->makeClient('<ShipmentCreationResponse xmlns="http://www.example.org/Response"><StatusList><Status Code="10001" Level="Critical error" Message="Login et/ou mot de passe non valide." /></StatusList></ShipmentCreationResponse>');
+        $client->setLogger($logger = new InMemoryLogger());
+
+        try {
+            $client->createShipment($this->makeRequest('FR-018332'));
+            self::fail('ApiException expected');
+        } catch (ApiException) {
+        }
+
+        $errors = $logger->recordsOfLevel('error');
+        self::assertCount(1, $errors);
+        self::assertSame(['10001' => 'Login et/ou mot de passe non valide.'], $errors[0]['context']['errors']);
+        self::assertSame('FR-018332', $errors[0]['context']['delivery_location']);
+    }
+
+    public function testNonBlockingWarningsAreLogged(): void
+    {
+        [$client] = $this->makeClient('<ShipmentCreationResponse xmlns="http://www.example.org/Response"><ShipmentsList><Shipment ShipmentNumber="11223344"><LabelList><Label><Output>https://label</Output></Label></LabelList></Shipment></ShipmentsList><StatusList><Status Code="10025" Level="Warning" Message="Invalid location — statement ignored" /></StatusList></ShipmentCreationResponse>');
+        $client->setLogger($logger = new InMemoryLogger());
+
+        $client->createShipment($this->makeRequest());
+
+        $warnings = $logger->recordsOfLevel('warning');
+        self::assertCount(1, $warnings);
+        self::assertSame('10025', $warnings[0]['context']['code']);
+        self::assertSame('Invalid location — statement ignored', $warnings[0]['context']['message']);
     }
 
     public function testParcelElementsFollowTheOrderOfTheXsd(): void
