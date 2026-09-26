@@ -4,6 +4,21 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.2] - 2026-09-26
+
+### Fixed
+
+- Label creation always failed: the request did not declare the `http://www.example.org/Request`
+  namespace, so Mondial Relay rejected every request with "10061 Problème de formatage du XML".
+- Errors returned by Mondial Relay were ignored and reported as "Incomplete API response": status
+  codes start with "1", which were all treated as warnings. The severity now comes from the
+  `Level` attribute (`Error` and `Critical error` raise an `ApiException`, `Warning` does not).
+- Successful responses were rejected: the shipment number is returned as an attribute
+  (`<Shipment ShipmentNumber="…">`), and the success status (`Code="0"`, which carries an
+  informative message in the sandbox) was treated as an error.
+- Tests use real responses of the Mondial Relay sandbox. Verified end to end against the sandbox:
+  shipment created and PDF label downloaded.
+
 ## [4.0.1] - 2026-09-26
 
 ### Fixed
@@ -61,6 +76,7 @@ Complete rewrite, replacing `QuentinBontemps/php-mondialrelay-api`.
 - `MondialRelayClientInterface`: a single entry point you can mock.
 - Built-in cURL transport (`ext-curl`, `ext-soap` and `ext-simplexml` required).
 
+[4.0.2]: https://github.com/ErnadoO/mondial-relay/compare/v4.0.1...v4.0.2
 [4.0.1]: https://github.com/ErnadoO/mondial-relay/compare/v4.0.0...v4.0.1
 [4.0.0]: https://github.com/ErnadoO/mondial-relay/compare/v3.0.0...v4.0.0
 [3.0.0]: https://github.com/ErnadoO/mondial-relay/releases/tag/v3.0.0

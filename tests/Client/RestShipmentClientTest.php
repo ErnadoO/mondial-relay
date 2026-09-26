@@ -16,6 +16,7 @@ use Ernadoo\MondialRelay\Shipment\Parcel;
 use Ernadoo\MondialRelay\Shipment\ShipmentRequest;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\Response;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
@@ -243,5 +244,68 @@ final class RestShipmentClientTest extends TestCase
 
         [$client] = $this->makeClient($emptyShipment);
         $client->createShipment($this->makeRequest());
+    }
+
+    public function testRequestDeclaresTheNamespaceExpectedByMondialRelay(): void
+    {
+        // Without it, the API answers "10061 Problème de formatage du XML" whatever the content.
+        [$client] = $this->makeClient(self::SUCCESS_XML);
+        $xml = new \SimpleXMLElement($client->buildRequestXml($this->makeRequest('FR-66974')));
+
+        self::assertSame(['' => 'http://www.example.org/Request'], $xml->getDocNamespaces());
+        self::assertSame('ShipmentCreationRequest', $xml->getName());
+        self::assertSame('FR-66974', (string) $xml->ShipmentsList->Shipment->DeliveryMode['Location']);
+    }
+
+    /**
+     * Real responses of the Mondial Relay sandbox: status codes start with "1" and the
+     * severity is carried by the Level attribute.
+     *
+     * @return iterable<string, array{string, string}>
+     */
+    public static function realErrorResponses(): iterable
+    {
+        yield 'malformed request' => [
+            '<ShipmentCreationResponse xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.example.org/Response"><StatusList><Status Code="10061" Level="Error" Message="Problème de formatage du XML." /></StatusList></ShipmentCreationResponse>',
+            '10061',
+        ];
+        yield 'invalid credentials' => [
+            '<ShipmentCreationResponse xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.example.org/Response"><StatusList><Status Code="10001" Level="Critical error" Message="Login et/ou mot de passe non valide. Vérifiez les informations d\'authentification." /></StatusList></ShipmentCreationResponse>',
+            '10001',
+        ];
+    }
+
+    #[DataProvider('realErrorResponses')]
+    public function testErrorsReturnedByMondialRelayRaiseAnApiException(string $responseXml, string $code): void
+    {
+        [$client] = $this->makeClient($responseXml);
+
+        try {
+            $client->createShipment($this->makeRequest());
+            self::fail('ApiException expected');
+        } catch (ApiException $e) {
+            self::assertArrayHasKey($code, $e->getErrors());
+        }
+    }
+
+    public function testRealSandboxSuccessResponseIsParsed(): void
+    {
+        // Real sandbox response (credentials replaced): the shipment number is an attribute,
+        // and the success status (Code="0", no Level) carries an informative message.
+        [$client] = $this->makeClient((string) file_get_contents(__DIR__.'/../Fixtures/sandbox-shipment-success.xml'));
+
+        $response = $client->createShipment($this->makeRequest('FR-018332'));
+
+        self::assertSame('00544601', $response->shipmentNumber);
+        self::assertStringStartsWith('https://connect-sandbox.mondialrelay.com/', $response->labelOutput);
+        self::assertStringContainsString('expedition=00544601', $response->labelOutput);
+        self::assertStringContainsString('00544601', $response->trackingUrl);
+    }
+
+    public function testWarningLevelDoesNotBlockTheShipment(): void
+    {
+        [$client] = $this->makeClient('<ShipmentCreationResponse xmlns="http://www.example.org/Response"><ShipmentsList><Shipment><ShipmentNumber>11223344</ShipmentNumber><LabelList><Label><Output>https://label</Output></Label></LabelList></Shipment></ShipmentsList><StatusList><Status Code="10025" Level="Warning" Message="Ignored" /></StatusList></ShipmentCreationResponse>');
+
+        self::assertSame('11223344', $client->createShipment($this->makeRequest())->shipmentNumber);
     }
 }

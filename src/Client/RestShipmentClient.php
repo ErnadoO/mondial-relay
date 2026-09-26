@@ -34,6 +34,9 @@ final class RestShipmentClient implements ShipmentClientInterface
     private const SANDBOX_URL    = 'https://connect-api-sandbox.mondialrelay.com/api/shipment';
     private const TRACKING_URL   = 'https://www.mondialrelay.fr/suivi-de-colis/?numeroExpedition=%s';
 
+    /** Namespace required on the request document (and "http://www.example.org/Response" on the response). */
+    private const REQUEST_NAMESPACE = 'http://www.example.org/Request';
+
     public function __construct(
         private readonly ClientInterface $client,
         private readonly RequestFactoryInterface $requestFactory,
@@ -80,7 +83,8 @@ final class RestShipmentClient implements ShipmentClientInterface
     /** @internal Exposed for testing. */
     public function buildRequestXml(ShipmentRequest $request): string
     {
-        $xml = new \SimpleXMLElement('<ShipmentCreationRequest/>');
+        // Mondial Relay rejects any request without this namespace ("10061 Problème de formatage du XML").
+        $xml = new \SimpleXMLElement(sprintf('<ShipmentCreationRequest xmlns="%s"/>', self::REQUEST_NAMESPACE));
 
         $context = $xml->addChild('Context');
         $context->addChild('Login', htmlspecialchars($this->login));
@@ -150,8 +154,7 @@ final class RestShipmentClient implements ShipmentClientInterface
         if (isset($xml->StatusList->Status)) {
             foreach ($xml->StatusList->Status as $status) {
                 $code = (string) ($status['Code'] ?? '');
-                // Codes starting with "1" are warnings only (non-blocking)
-                if ('' !== $code && !str_starts_with($code, '1')) {
+                if ('' !== $code && self::isBlocking($code, (string) ($status['Level'] ?? ''))) {
                     $errors[$code] = (string) ($status['Message'] ?? $code);
                 }
             }
@@ -162,7 +165,8 @@ final class RestShipmentClient implements ShipmentClientInterface
         }
 
         $shipment       = $xml->ShipmentsList->Shipment ?? null;
-        $shipmentNumber = (string) ($shipment->ShipmentNumber ?? '');
+        // The API returns it as an attribute: <Shipment ShipmentNumber="…">
+        $shipmentNumber = (string) ($shipment['ShipmentNumber'] ?? $shipment->ShipmentNumber ?? '');
         $labelOutput    = (string) ($shipment->LabelList->Label->Output ?? '');
 
         if ('' === $shipmentNumber || '' === $labelOutput) {
@@ -175,6 +179,24 @@ final class RestShipmentClient implements ShipmentClientInterface
             outputType: $outputType,
             trackingUrl: sprintf(self::TRACKING_URL, $shipmentNumber),
         );
+    }
+
+    /**
+     * The severity is carried by the Level attribute ("Error", "Critical error", "Warning").
+     * Code "0" is the success status, possibly with an informative message (e.g. in the sandbox).
+     * Without Level, codes starting with "1" are treated as warnings.
+     */
+    private static function isBlocking(string $code, string $level): bool
+    {
+        if ('0' === $code) {
+            return false;
+        }
+
+        if ('' !== $level) {
+            return 0 !== strcasecmp($level, 'Warning');
+        }
+
+        return !str_starts_with($code, '1');
     }
 
     private function appendParcel(\SimpleXMLElement $parent, Parcel $parcel): void
