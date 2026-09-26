@@ -30,7 +30,7 @@ $request = new ShipmentRequest(
         mobileNo:    '+33600000001',
         email:       'recipient@example.com',
     ),
-    parcels: [new Parcel(weightGrams: 500, content: 'Vêtements')],
+    parcels: [new Parcel(weightGrams: 500, content: 'Clothes')],
 );
 
 $response = $client->createShipment($request);
@@ -109,7 +109,7 @@ $request = new ShipmentRequest(
     deliveryMode: DeliveryMode::RELAY_XL, // 24L supports multi-parcel
     parcels: [
         new Parcel(weightGrams: 800, content: 'Chaussures'),
-        new Parcel(weightGrams: 600, content: 'Vêtements'),
+        new Parcel(weightGrams: 600, content: 'Clothes'),
     ],
 );
 ```

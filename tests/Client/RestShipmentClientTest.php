@@ -111,7 +111,7 @@ final class RestShipmentClientTest extends TestCase
         return new ShipmentRequest(
             sender: $sender,
             recipient: $recipient,
-            parcels: [new Parcel(weightGrams: 500, content: 'Vêtements')],
+            parcels: [new Parcel(weightGrams: 500, content: 'Clothes')],
             deliveryMode: DeliveryMode::RELAY,
             collectionMode: CollectionMode::DROP_OFF,
             outputType: OutputType::PDF_URL,

@@ -155,13 +155,13 @@ final class SoapParcelShopClient implements ParcelShopClientInterface
     private function statMessage(string $stat): string
     {
         return match ($stat) {
-            '1'  => 'Enseigne invalide',
-            '2'  => 'Numéro d\'enseigne vide ou inexistant',
-            '8'  => 'Mot de passe ou hachage invalide',
-            '9'  => 'Ville non reconnue ou non unique',
-            '97' => 'Clé de sécurité invalide',
-            '99' => 'Erreur générique du service Mondial Relay',
-            default => sprintf('Erreur STAT %s', $stat),
+            '1'  => 'Invalid brand',
+            '2'  => 'Brand number empty or unknown',
+            '8'  => 'Invalid password or hash',
+            '9'  => 'City not recognised or not unique',
+            '97' => 'Invalid security key',
+            '99' => 'Mondial Relay service generic error',
+            default => sprintf('STAT error %s', $stat),
         };
     }
 }

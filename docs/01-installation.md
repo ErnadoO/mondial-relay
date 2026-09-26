@@ -15,7 +15,7 @@ You need two sets of credentials:
 
 | Credential | Used for | Where to find it |
 |---|---|---|
-| `login` | V2 REST — label creation | MR Connect → Administration → Gestion des Utilisateurs → Configuration des API |
+| `login` | V2 REST — label creation | MR Connect → Administration → User management → API configuration (French UI: « Gestion des Utilisateurs → Configuration des API ») |
 | `password` | V2 REST — label creation | Same as above |
 | `customerId` | V2 REST + V1 SOAP | Your 8-character brand ID (e.g. `"BDTEST  "` for sandbox) |
 | `secretKey` | V1 SOAP — relay point search (MD5 hash) | Provided by your Mondial Relay account manager |

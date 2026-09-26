@@ -44,7 +44,7 @@ $client = MondialRelayClient::create(
 $request = new ShipmentRequest(
     sender:    new Address('FR', '59510', 'Hem', '4 Av. Antoine Pinay', 'Erwan', 'Nader', mobileNo: '+33600000000'),
     recipient: new Address('FR', '75001', 'Paris', '1 Rue de la Paix', 'Jane', 'Doe', mobileNo: '+33600000001'),
-    parcels:   [new Parcel(weightGrams: 500, content: 'Vêtements')],
+    parcels:   [new Parcel(weightGrams: 500, content: 'Clothes')],
     // deliveryLocation left empty = "Notif Destinataire":
     // Mondial Relay notifies the recipient by SMS so they choose their relay point.
 );
