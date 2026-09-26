@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   malformed or incomplete. Catch `MondialRelayException` to handle every failure.
 - SOAP error messages, docs and test fixtures are in English.
 
+### Documentation
+
+- The whole documentation is now in the README (the `docs/` pages are merged into it), including the
+  delivery, collection and output enum cases that were missing.
+
 ## [4.0.0] - 2026-09-26
 
 ### Changed (breaking)
