@@ -13,10 +13,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   malformed or incomplete. Catch `MondialRelayException` to handle every failure.
 - SOAP error messages, docs and test fixtures are in English.
 
+### Changed
+
+- Requires `psr/http-factory` ^1.1 (1.0 triggers deprecations on PHP 8.4+).
+
 ### Documentation
 
 - The whole documentation is now in the README (the `docs/` pages are merged into it), including the
   delivery, collection and output enum cases that were missing.
+
+### Internal
+
+- CI: PHP 8.2 to 8.5, plus a job with the lowest allowed dependencies; `composer validate --strict`.
+- PHPStan 2.x.
 
 ## [4.0.0] - 2026-09-26
 

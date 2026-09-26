@@ -2,7 +2,13 @@
     "name": "ernadoo/mondial-relay",
     "type": "library",
     "description": "Mondial Relay API client — V2 REST (label creation) + SOAP (relay point search)",
-    "keywords": ["mondial-relay", "shipping", "carrier", "label", "relay-point"],
+    "keywords": [
+        "mondial-relay",
+        "shipping",
+        "carrier",
+        "label",
+        "relay-point"
+    ],
     "license": "MIT",
     "authors": [
         {
@@ -15,12 +21,12 @@
         "ext-soap": "*",
         "ext-simplexml": "*",
         "psr/http-client": "^1.0",
-        "psr/http-factory": "^1.0",
+        "psr/http-factory": "^1.1",
         "psr/http-message": "^1.1 || ^2.0"
     },
     "require-dev": {
-        "nyholm/psr7": "^1.8",
-        "phpstan/phpstan": "^1.11",
+        "nyholm/psr7": "^1.8.2",
+        "phpstan/phpstan": "^2.1",
         "phpunit/phpunit": "^11.0"
     },
     "suggest": {
@@ -43,5 +49,10 @@
     },
     "config": {
         "sort-packages": true
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "4.x-dev"
+        }
     }
 }
