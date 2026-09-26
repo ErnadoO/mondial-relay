@@ -205,15 +205,16 @@ final class RestShipmentClient implements ShipmentClientInterface
         if ('' !== $parcel->content) {
             $node->addChild('Content', htmlspecialchars($parcel->content));
         }
-        $weight = $node->addChild('Weight');
-        $weight->addAttribute('Value', (string) $parcel->weightGrams);
-        $weight->addAttribute('Unit', 'gr');
-
+        // Order required by the XSD: Content, Length, Width, Depth, Weight
         if ($parcel->lengthCm > 0) {
             $length = $node->addChild('Length');
             $length->addAttribute('Value', (string) $parcel->lengthCm);
             $length->addAttribute('Unit', 'cm');
         }
+
+        $weight = $node->addChild('Weight');
+        $weight->addAttribute('Value', (string) $parcel->weightGrams);
+        $weight->addAttribute('Unit', 'gr');
     }
 
     private function fillAddress(\SimpleXMLElement $node, Address $address): void

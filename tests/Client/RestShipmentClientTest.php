@@ -288,6 +288,21 @@ final class RestShipmentClientTest extends TestCase
         }
     }
 
+    public function testParcelElementsFollowTheOrderOfTheXsd(): void
+    {
+        [$client] = $this->makeClient(self::SUCCESS_XML);
+        $request = new ShipmentRequest(
+            sender: new Address('FR', '75001', 'Paris', '1 Rue de la Paix', 'Jane', 'Doe'),
+            recipient: new Address('FR', '29170', 'Fouesnant', '95 zone', 'John', 'Doe'),
+            parcels: [new Parcel(weightGrams: 800, content: 'Shoes', lengthCm: 30)],
+        );
+
+        $parcel = (new \SimpleXMLElement($client->buildRequestXml($request)))->ShipmentsList->Shipment->Parcels->Parcel;
+        $names = array_map(static fn (\SimpleXMLElement $e) => $e->getName(), iterator_to_array($parcel->children(), false));
+
+        self::assertSame(['Content', 'Length', 'Weight'], $names);
+    }
+
     public function testRealSandboxSuccessResponseIsParsed(): void
     {
         // Real sandbox response (credentials replaced): the shipment number is an attribute,

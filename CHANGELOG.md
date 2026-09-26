@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Successful responses were rejected: the shipment number is returned as an attribute
   (`<Shipment ShipmentNumber="…">`), and the success status (`Code="0"`, which carries an
   informative message in the sandbox) was treated as an error.
+- Parcel dimensions were sent after the weight: elements now follow the order of the official XSD
+  (Content, Length, Width, Depth, Weight).
 - Tests use real responses of the Mondial Relay sandbox. Verified end to end against the sandbox:
   shipment created and PDF label downloaded.
 
