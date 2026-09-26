@@ -4,6 +4,15 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.1] - 2026-09-26
+
+### Fixed
+
+- The client contract now documents both exceptions: `ApiException` when Mondial Relay returns
+  an error, and its parent `MondialRelayException` when the HTTP call fails or the response is
+  malformed or incomplete. Catch `MondialRelayException` to handle every failure.
+- SOAP error messages, docs and test fixtures are in English.
+
 ## [4.0.0] - 2026-09-26
 
 ### Changed (breaking)
@@ -25,10 +34,6 @@ HTTP is now done through **PSR-18** instead of the built-in cURL transport.
 ### Fixed
 
 - Invalid XML responses no longer emit PHP warnings (only `MondialRelayException` is thrown).
-- The client contract now documents both exceptions: `ApiException` when Mondial Relay returns
-  an error, and its parent `MondialRelayException` when the HTTP call fails or the response is
-  malformed or incomplete. Catch `MondialRelayException` to handle every failure.
-- SOAP error messages are in English.
 
 ## [3.0.0] - 2026-04-19
 
@@ -42,5 +47,6 @@ Complete rewrite, replacing `QuentinBontemps/php-mondialrelay-api`.
 - `MondialRelayClientInterface`: a single entry point you can mock.
 - Built-in cURL transport (`ext-curl`, `ext-soap` and `ext-simplexml` required).
 
+[4.0.1]: https://github.com/ErnadoO/mondial-relay/compare/v4.0.0...v4.0.1
 [4.0.0]: https://github.com/ErnadoO/mondial-relay/compare/v3.0.0...v4.0.0
 [3.0.0]: https://github.com/ErnadoO/mondial-relay/releases/tag/v3.0.0
