@@ -212,23 +212,35 @@ foreach ($shops as $shop) {
 
 ```php
 use Ernadoo\MondialRelay\Exception\ApiException;
-use Ernadoo\MondialRelay\Exception\MondialRelayException;
+use Ernadoo\MondialRelay\Exception\ConfigurationException;
+use Ernadoo\MondialRelay\Exception\TransportException;
 
 try {
     $response = $client->createShipment($request);
 } catch (ApiException $e) {
-    // Mondial Relay returned an error (invalid address, bad credentials…)
+    // Mondial Relay rejected the request (invalid phone number, unknown relay point…)
     foreach ($e->getErrors() as $code => $message) {
         echo "[$code] $message\n";
     }
-} catch (MondialRelayException $e) {
-    // HTTP failure, malformed or incomplete response
-    echo $e->getMessage();
+} catch (TransportException $e) {
+    // Mondial Relay unreachable, HTTP or SOAP error, malformed or incomplete response: retry later
+} catch (ConfigurationException $e) {
+    // A credential needed by the operation is missing
 }
 ```
 
-`ApiException` extends `MondialRelayException`: catch `MondialRelayException` alone to handle every
-failure. The same applies to `searchParcelShops()`.
+All three extend `MondialRelayException`: catch it alone to handle every failure. The same applies
+to `searchParcelShops()`.
+
+Exception messages are meant for developers and logs, in English. The messages inside
+`getErrors()` come from Mondial Relay itself, in the language of the request `culture` (`fr-FR` by
+default). To show a message to your users, translate from the exception class and the codes:
+`ernadoo/mondial-relay-bundle` does it for Symfony applications.
+
+Codes seen on the label creation API: `10001` invalid API login or password, `10034` parcel weight
+out of range, `10051` invalid phone number (international format expected), `10055` no sorting plan
+for this relay point (unknown relay point, or unavailable for this delivery mode), `99999` generic
+error. The relay point search uses the codes of the former API (`STAT`, 1–99).
 
 ## Logging
 

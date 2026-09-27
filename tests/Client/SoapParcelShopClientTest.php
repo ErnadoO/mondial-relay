@@ -17,7 +17,7 @@ final class SoapParcelShopClientTest extends TestCase
     {
         $client = new SoapParcelShopClient('CC12345', '');
 
-        $this->expectException(\Ernadoo\MondialRelay\Exception\MondialRelayException::class);
+        $this->expectException(\Ernadoo\MondialRelay\Exception\ConfigurationException::class);
         $this->expectExceptionMessage('private key');
 
         $client->search(new ParcelShopSearchRequest('FR', '59000'));

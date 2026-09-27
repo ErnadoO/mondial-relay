@@ -6,7 +6,8 @@ namespace Ernadoo\MondialRelay\Tests\Client;
 
 use Ernadoo\MondialRelay\Client\RestShipmentClient;
 use Ernadoo\MondialRelay\Exception\ApiException;
-use Ernadoo\MondialRelay\Exception\MondialRelayException;
+use Ernadoo\MondialRelay\Exception\ConfigurationException;
+use Ernadoo\MondialRelay\Exception\TransportException;
 use Ernadoo\MondialRelay\Shipment\Address;
 use Ernadoo\MondialRelay\Shipment\CollectionMode;
 use Ernadoo\MondialRelay\Shipment\DeliveryMode;
@@ -75,11 +76,11 @@ final class RestShipmentClientTest extends TestCase
      * Returns a RestShipmentClient backed by a PSR-18 stub that always returns $responseXml.
      * The stub also records the last outgoing request for URL/body assertions.
      */
-    private function makeClient(string $responseXml, bool $sandbox = false): array
+    private function makeClient(string $responseXml, bool $sandbox = false, int $status = 200): array
     {
         $psr17 = new Psr17Factory();
 
-        $httpClient = new class(new Response(200, [], $responseXml)) implements ClientInterface {
+        $httpClient = new class(new Response($status, [], $responseXml)) implements ClientInterface {
             public RequestInterface $lastRequest;
 
             public function __construct(private readonly ResponseInterface $response) {}
@@ -222,9 +223,18 @@ final class RestShipmentClientTest extends TestCase
         self::assertStringContainsString('Unit="gr"', $xml);
     }
 
+    public function testHttpErrorFromMondialRelayIsATransportError(): void
+    {
+        $this->expectException(TransportException::class);
+        $this->expectExceptionMessage('HTTP 503');
+
+        [$client] = $this->makeClient('Service Unavailable', status: 503);
+        $client->createShipment($this->makeRequest());
+    }
+
     public function testParseResponseThrowsOnInvalidXml(): void
     {
-        $this->expectException(MondialRelayException::class);
+        $this->expectException(TransportException::class);
 
         [$client] = $this->makeClient('not-xml-at-all');
         $client->createShipment($this->makeRequest());
@@ -232,7 +242,7 @@ final class RestShipmentClientTest extends TestCase
 
     public function testParseResponseThrowsWhenShipmentNumberMissing(): void
     {
-        $this->expectException(MondialRelayException::class);
+        $this->expectException(TransportException::class);
         $this->expectExceptionMessage('Incomplete');
 
         $emptyShipment = <<<XML
@@ -296,7 +306,7 @@ final class RestShipmentClientTest extends TestCase
         $http->expects(self::never())->method('sendRequest');
         $client = new RestShipmentClient($http, $psr17, $psr17, '', '', 'BDTEST  ', true);
 
-        $this->expectException(MondialRelayException::class);
+        $this->expectException(ConfigurationException::class);
         $this->expectExceptionMessage('API login and password');
 
         $client->createShipment($this->makeRequest());

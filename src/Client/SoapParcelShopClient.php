@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Ernadoo\MondialRelay\Client;
 
 use Ernadoo\MondialRelay\Exception\ApiException;
+use Ernadoo\MondialRelay\Exception\ConfigurationException;
 use Ernadoo\MondialRelay\Exception\MondialRelayException;
+use Ernadoo\MondialRelay\Exception\TransportException;
 use Ernadoo\MondialRelay\ParcelShop\ParcelShop;
 use Ernadoo\MondialRelay\ParcelShop\ParcelShopSearchRequest;
 use Psr\Log\LoggerAwareInterface;
@@ -102,7 +104,7 @@ final class SoapParcelShopClient implements ParcelShopClientInterface, LoggerAwa
     private function doSearch(ParcelShopSearchRequest $request): array
     {
         if ('' === $this->privateKey) {
-            throw new MondialRelayException('Relay point search requires the brand private key ("clé privée" in MR Connect).');
+            throw new ConfigurationException('Relay point search requires the brand private key ("clé privée" in MR Connect).');
         }
 
         $params = $this->buildSearchParameters($request);
@@ -110,7 +112,7 @@ final class SoapParcelShopClient implements ParcelShopClientInterface, LoggerAwa
         try {
             $result = $this->getSoapClient()->WSI4_PointRelais_Recherche($params);
         } catch (\SoapFault $e) {
-            throw new MondialRelayException(
+            throw new TransportException(
                 sprintf('SOAP error searching relay points: %s', $e->getMessage()),
                 0,
                 $e,
@@ -120,7 +122,7 @@ final class SoapParcelShopClient implements ParcelShopClientInterface, LoggerAwa
         $data = $result->WSI4_PointRelais_RechercheResult ?? null;
 
         if (null === $data) {
-            throw new MondialRelayException('Unexpected SOAP response structure.');
+            throw new TransportException('Unexpected SOAP response structure.');
         }
 
         $stat = (string) ($data->STAT ?? '99');

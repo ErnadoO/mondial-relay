@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Ernadoo\MondialRelay\Client;
 
 use Ernadoo\MondialRelay\Exception\ApiException;
+use Ernadoo\MondialRelay\Exception\ConfigurationException;
 use Ernadoo\MondialRelay\Exception\MondialRelayException;
+use Ernadoo\MondialRelay\Exception\TransportException;
 use Ernadoo\MondialRelay\Shipment\Address;
 use Ernadoo\MondialRelay\Shipment\OutputType;
 use Ernadoo\MondialRelay\Shipment\Parcel;
@@ -80,18 +82,18 @@ final class RestShipmentClient implements ShipmentClientInterface, LoggerAwareIn
 
         try {
             if ('' === $this->apiLogin || '' === $this->apiPassword) {
-                throw new MondialRelayException('Label creation requires the API login and password of an MR Connect API user (Administration → User management → API configuration).');
+                throw new ConfigurationException('Label creation requires the API login and password of an MR Connect API user (Administration → User management → API configuration).');
             }
 
             try {
                 $psrRes = $this->client->sendRequest($psrReq);
             } catch (ClientExceptionInterface $e) {
-                throw new MondialRelayException('HTTP error: '.$e->getMessage(), 0, $e);
+                throw new TransportException('HTTP error: '.$e->getMessage(), 0, $e);
             }
 
             $statusCode = $psrRes->getStatusCode();
             if ($statusCode >= 400) {
-                throw new MondialRelayException(sprintf('HTTP %d from Mondial Relay API.', $statusCode));
+                throw new TransportException(sprintf('HTTP %d from Mondial Relay API.', $statusCode));
             }
 
             $response = $this->parseResponse((string) $psrRes->getBody(), $request->outputType);
@@ -177,7 +179,7 @@ final class RestShipmentClient implements ShipmentClientInterface, LoggerAwareIn
         try {
             $xml = new \SimpleXMLElement($body);
         } catch (\Exception $e) {
-            throw new MondialRelayException('Invalid XML response from Mondial Relay API: '.$e->getMessage(), 0, $e);
+            throw new TransportException('Invalid XML response from Mondial Relay API: '.$e->getMessage(), 0, $e);
         } finally {
             libxml_clear_errors();
             libxml_use_internal_errors($previous);
@@ -210,7 +212,7 @@ final class RestShipmentClient implements ShipmentClientInterface, LoggerAwareIn
         $labelOutput    = (string) ($shipment->LabelList->Label->Output ?? '');
 
         if ('' === $shipmentNumber || '' === $labelOutput) {
-            throw new MondialRelayException('Incomplete API response: missing ShipmentNumber or label Output.');
+            throw new TransportException('Incomplete API response: missing ShipmentNumber or label Output.');
         }
 
         return new ShipmentResponse(
