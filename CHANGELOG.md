@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.1.0] - 2026-09-27
+
 ### Changed (breaking for named arguments)
 
 - Credential arguments are named after MR Connect: `login` → `apiLogin`, `password` → `apiPassword`,
@@ -18,9 +20,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   relay point searches at info level, API rejections at error level with their codes, non-blocking
   API warnings (previously ignored silently) at warning level. Credentials, request and response
   bodies are never logged.
+- `ConfigurationException` (a credential needed by the operation is missing) and
+  `TransportException` (Mondial Relay unreachable, HTTP or SOAP error, invalid or incomplete
+  response), both extending `MondialRelayException`: the cause of a failure can be told apart
+  without reading the message, e.g. to show a translated message. `ApiException` keeps the
+  Mondial Relay codes (`getErrors()`).
 
 ### Fixed
 
+- `ApiException::getErrors()` is documented as `array<int|string, string>`: PHP turns numeric
+  Mondial Relay codes into integer keys ("10051" becomes 10051).
 - Relay point names and addresses no longer contain runs of spaces: Mondial Relay replaces
   apostrophes with spaces ("RUE D'ARMOR" comes back as "RUE D  ARMOR").
 - Missing credentials fail with a clear message before calling Mondial Relay: API login and
@@ -105,7 +114,8 @@ Complete rewrite, replacing `QuentinBontemps/php-mondialrelay-api`.
 - `MondialRelayClientInterface`: a single entry point you can mock.
 - Built-in cURL transport (`ext-curl`, `ext-soap` and `ext-simplexml` required).
 
-[Unreleased]: https://github.com/ErnadoO/mondial-relay/compare/v4.0.1...master
+[Unreleased]: https://github.com/ErnadoO/mondial-relay/compare/v4.1.0...master
+[4.1.0]: https://github.com/ErnadoO/mondial-relay/compare/v4.0.1...v4.1.0
 [4.0.1]: https://github.com/ErnadoO/mondial-relay/compare/v4.0.0...v4.0.1
 [4.0.0]: https://github.com/ErnadoO/mondial-relay/compare/v3.0.0...v4.0.0
 [3.0.0]: https://github.com/ErnadoO/mondial-relay/releases/tag/v3.0.0
