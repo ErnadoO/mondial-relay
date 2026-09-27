@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed (breaking for named arguments)
+
+- Credential arguments are named after MR Connect: `login` → `apiLogin`, `password` → `apiPassword`,
+  `customerId` → `brandCode`, `secretKey` → `privateKey` (`MondialRelayClient::create()`,
+  `RestShipmentClient`, `SoapParcelShopClient`). Positional calls are not affected.
+
 ### Added
 
 - PSR-3 logging (`setLogger()` on `MondialRelayClient` and both clients): created shipments and
@@ -33,6 +39,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - STAT errors use the official Mondial Relay messages (e.g. 95 "Merchant account not activated").
 - Parcel dimensions were sent after the weight: elements now follow the order of the official XSD
   (Content, Length, Width, Depth, Weight).
+- The README claimed that the sandbox accepted the `BDTEST` brand with any credentials: it needs a
+  valid API user.
 - Tests use real responses of the Mondial Relay sandbox. Verified end to end against the sandbox:
   shipment created and PDF label downloaded.
 

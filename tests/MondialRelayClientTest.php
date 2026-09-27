@@ -89,6 +89,26 @@ final class MondialRelayClientTest extends TestCase
         self::assertSame('FR-066974', $shop->locationCode());
     }
 
+    public function testCreateAcceptsTheCredentialsByTheirMondialRelayNames(): void
+    {
+        $psr17 = new \Nyholm\Psr7\Factory\Psr17Factory();
+
+        $client = MondialRelayClient::create(
+            httpClient: $this->createStub(\Psr\Http\Client\ClientInterface::class),
+            requestFactory: $psr17,
+            streamFactory: $psr17,
+            apiLogin: 'api-login@example.com',
+            apiPassword: 'api-password',
+            brandCode: 'CC12345',
+            privateKey: 'PRIVATE',
+            sandbox: true,
+        );
+
+        $soap = (new \ReflectionProperty($client, 'parcelShopClient'))->getValue($client);
+        self::assertSame('CC12345', (new \ReflectionProperty($soap, 'brandCode'))->getValue($soap));
+        self::assertSame('PRIVATE', (new \ReflectionProperty($soap, 'privateKey'))->getValue($soap));
+    }
+
     public function testLoggerIsPassedToBothClients(): void
     {
         $psr17 = new \Nyholm\Psr7\Factory\Psr17Factory();

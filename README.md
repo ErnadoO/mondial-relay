@@ -23,12 +23,14 @@ composer require ernadoo/mondial-relay symfony/http-client nyholm/psr7
 
 ## API credentials
 
-| Credential | Used for | Where to find it |
+The names follow MR Connect, Mondial Relay's customer area:
+
+| Argument | In MR Connect | Used for |
 |---|---|---|
-| `login` | V2 REST: label creation | MR Connect → Administration → User management → API configuration (French UI: « Gestion des Utilisateurs → Configuration des API ») |
-| `password` | V2 REST: label creation | Same as above |
-| `customerId` | V2 REST and V1 SOAP | Your 8-character brand ID (e.g. `"BDTEST  "` in the sandbox) |
-| `secretKey` | V1 SOAP: relay point search (MD5 hash) | Provided by your Mondial Relay account manager |
+| `brandCode` | Code enseigne (brand code, 8 characters) | Label creation and relay point search |
+| `apiLogin` | Login of an API user: Administration → User management → API configuration (French UI: « Gestion des utilisateurs → Configuration des API ») | Label creation (V2 REST) |
+| `apiPassword` | Password of that API user | Label creation (V2 REST) |
+| `privateKey` | Clé privée (private key) of the brand | Relay point search only (V1 SOAP signature) |
 
 ## Creating the client
 
@@ -42,11 +44,11 @@ $client = MondialRelayClient::create(
     httpClient:     $psr18,
     requestFactory: $psr18,
     streamFactory:  $psr18,
-    login:      'YOUR_LOGIN',
-    password:   'YOUR_PASSWORD',
-    customerId: 'YOUR_CUSTOMER_ID',
-    secretKey:  'YOUR_SECRET_KEY',
-    sandbox:    false,
+    apiLogin:    'YOUR_API_LOGIN',
+    apiPassword: 'YOUR_API_PASSWORD',
+    brandCode:   'YOUR_BRAND_CODE',
+    privateKey:  'YOUR_PRIVATE_KEY',
+    sandbox:     false,
 );
 ```
 
@@ -58,8 +60,8 @@ use Ernadoo\MondialRelay\Client\SoapParcelShopClient;
 use Ernadoo\MondialRelay\MondialRelayClient;
 
 $client = new MondialRelayClient(
-    new RestShipmentClient($httpClient, $requestFactory, $streamFactory, 'login', 'password', 'CUSTOMER_ID', sandbox: false),
-    new SoapParcelShopClient('CUSTOMER_ID', 'SECRET_KEY'),
+    new RestShipmentClient($httpClient, $requestFactory, $streamFactory, 'API_LOGIN', 'API_PASSWORD', 'BRAND_CODE', sandbox: false),
+    new SoapParcelShopClient('BRAND_CODE', 'PRIVATE_KEY'),
 );
 ```
 
@@ -68,8 +70,10 @@ $client = new MondialRelayClient(
 ### Sandbox
 
 `sandbox: true` sends label creation to `https://connect-api-sandbox.mondialrelay.com/api/shipment`:
-use `'BDTEST  '` as `customerId` and any non-empty credentials. Relay point search always hits the
-production SOAP endpoint (Mondial Relay provides no sandbox for it).
+labels are generated ("SANDBOX MODE") but nothing is recorded. It needs a valid API user: invalid
+credentials are rejected (error 10001), and the public `BDTEST` brand used in older examples is no
+longer active. Relay point search always hits the production SOAP endpoint (Mondial Relay provides
+no sandbox for it).
 
 ## Creating a label
 

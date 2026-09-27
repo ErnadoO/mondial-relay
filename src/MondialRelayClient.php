@@ -75,25 +75,25 @@ final class MondialRelayClient implements MondialRelayClientInterface, LoggerAwa
      *   $factory = new \GuzzleHttp\Psr7\HttpFactory();
      *   $client  = MondialRelayClient::create($guzzle, $factory, $factory, ...);
      *
-     * @param string $login      V2 API login (MR Connect → API configuration)
-     * @param string $password   V2 API password
-     * @param string $customerId 8-character brand ID (e.g. "BDTEST  ")
-     * @param string $secretKey  V1 SOAP secret key (relay point search MD5)
+     * @param string $apiLogin    V2 API user login (MR Connect → Administration → User management → API configuration)
+     * @param string $apiPassword V2 API user password
+     * @param string $brandCode   Brand code ("code enseigne"), 8 characters (e.g. "BDTEST  ")
+     * @param string $privateKey  Brand private key ("clé privée"), only used to search relay points (V1 SOAP)
      * @param bool   $sandbox    Use the MR sandbox environment
      */
     public static function create(
         ClientInterface $httpClient,
         RequestFactoryInterface $requestFactory,
         StreamFactoryInterface $streamFactory,
-        string $login,
-        string $password,
-        string $customerId,
-        string $secretKey,
+        string $apiLogin,
+        string $apiPassword,
+        string $brandCode,
+        string $privateKey,
         bool $sandbox = false,
     ): self {
         return new self(
-            new RestShipmentClient($httpClient, $requestFactory, $streamFactory, $login, $password, $customerId, $sandbox),
-            new SoapParcelShopClient($customerId, $secretKey),
+            new RestShipmentClient($httpClient, $requestFactory, $streamFactory, $apiLogin, $apiPassword, $brandCode, $sandbox),
+            new SoapParcelShopClient($brandCode, $privateKey),
         );
     }
 }

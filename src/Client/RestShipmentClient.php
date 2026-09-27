@@ -47,9 +47,9 @@ final class RestShipmentClient implements ShipmentClientInterface, LoggerAwareIn
         private readonly ClientInterface $client,
         private readonly RequestFactoryInterface $requestFactory,
         private readonly StreamFactoryInterface $streamFactory,
-        private readonly string $login,
-        private readonly string $password,
-        private readonly string $customerId,
+        private readonly string $apiLogin,
+        private readonly string $apiPassword,
+        private readonly string $brandCode,
         private readonly bool $sandbox = false,
     ) {
     }
@@ -116,9 +116,9 @@ final class RestShipmentClient implements ShipmentClientInterface, LoggerAwareIn
         $xml = new \SimpleXMLElement(sprintf('<ShipmentCreationRequest xmlns="%s"/>', self::REQUEST_NAMESPACE));
 
         $context = $xml->addChild('Context');
-        $context->addChild('Login', htmlspecialchars($this->login));
-        $context->addChild('Password', htmlspecialchars($this->password));
-        $context->addChild('CustomerId', htmlspecialchars($this->customerId));
+        $context->addChild('Login', htmlspecialchars($this->apiLogin));
+        $context->addChild('Password', htmlspecialchars($this->apiPassword));
+        $context->addChild('CustomerId', htmlspecialchars($this->brandCode));
         $context->addChild('Culture', htmlspecialchars($request->culture));
         $context->addChild('VersionAPI', '1.0');
 

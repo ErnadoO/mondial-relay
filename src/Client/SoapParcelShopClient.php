@@ -28,8 +28,8 @@ final class SoapParcelShopClient implements ParcelShopClientInterface, LoggerAwa
     private ?\SoapClient $soapClient = null;
 
     public function __construct(
-        private readonly string $customerId,
-        private readonly string $secretKey,
+        private readonly string $brandCode,
+        private readonly string $privateKey,
     ) {
     }
 
@@ -187,8 +187,8 @@ final class SoapParcelShopClient implements ParcelShopClientInterface, LoggerAwa
     private function addSecurity(array $params): array
     {
         // The brand code is always 8 characters, padded with spaces (e.g. "BDTEST  ")
-        $params = array_merge(['Enseigne' => str_pad($this->customerId, 8)], $params);
-        $chain = implode('', $params).$this->secretKey;
+        $params = array_merge(['Enseigne' => str_pad($this->brandCode, 8)], $params);
+        $chain = implode('', $params).$this->privateKey;
 
         $params['Security'] = strtoupper(md5(mb_convert_encoding($chain, 'ISO-8859-1', 'UTF-8')));
 
