@@ -157,6 +157,25 @@ final class SoapParcelShopClientTest extends TestCase
         self::assertSame('0001-2359 0000-0000', $shop->openingHours['Lundi']);
     }
 
+    public function testRunsOfSpacesInTextFieldsAreCollapsed(): void
+    {
+        $client = new SoapParcelShopClient('BDTEST  ', 'PrivateKey');
+
+        // Mondial Relay replaces apostrophes with spaces: "RUE D'ARMOR" comes back as "RUE D  ARMOR"
+        $point         = new \stdClass();
+        $point->Num    = '023417';
+        $point->LgAdr1 = 'LOCKER 24/7  INTERMARCHE CONTACT   ';
+        $point->LgAdr3 = 'RUE D  ARMOR';
+        $point->LgAdr4 = '';
+        $point->Ville  = 'SAINT  EVARZEC      ';
+
+        $shop = (new \ReflectionMethod($client, 'mapParcelShop'))->invoke($client, $point);
+
+        self::assertSame('LOCKER 24/7 INTERMARCHE CONTACT', $shop->name);
+        self::assertSame('RUE D ARMOR', $shop->address1);
+        self::assertSame('SAINT EVARZEC', $shop->city);
+    }
+
     public function testDeliveryModeHelpers(): void
     {
         self::assertTrue(DeliveryMode::RELAY->isRelay());

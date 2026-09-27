@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Relay point names and addresses no longer contain runs of spaces: Mondial Relay replaces
+  apostrophes with spaces ("RUE D'ARMOR" comes back as "RUE D  ARMOR").
 - Missing credentials fail with a clear message before calling Mondial Relay: API login and
   password for label creation, private key for relay point search.
 - HTTP errors no longer copy the response body into the exception message: Mondial Relay echoes

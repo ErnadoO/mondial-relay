@@ -167,21 +167,30 @@ final class SoapParcelShopClient implements ParcelShopClientInterface, LoggerAwa
             }
         }
 
-        // Text fields are padded with spaces; Distance is in metres.
+        // Distance is in metres.
         return new ParcelShop(
-            id: trim((string) ($point->Num ?? '')),
-            name: trim((string) ($point->LgAdr1 ?? '')),
-            address1: trim((string) ($point->LgAdr3 ?? '')),
-            address2: trim((string) ($point->LgAdr4 ?? '')),
-            postCode: trim((string) ($point->CP ?? '')),
-            city: trim((string) ($point->Ville ?? '')),
-            countryCode: trim((string) ($point->Pays ?? '')),
+            id: self::text($point->Num ?? ''),
+            name: self::text($point->LgAdr1 ?? ''),
+            address1: self::text($point->LgAdr3 ?? ''),
+            address2: self::text($point->LgAdr4 ?? ''),
+            postCode: self::text($point->CP ?? ''),
+            city: self::text($point->Ville ?? ''),
+            countryCode: self::text($point->Pays ?? ''),
             latitude: (float) str_replace(',', '.', (string) ($point->Latitude ?? '0')),
             longitude: (float) str_replace(',', '.', (string) ($point->Longitude ?? '0')),
             distanceKm: (float) str_replace(',', '.', (string) ($point->Distance ?? '0')) / 1000,
             openingHours: $hours,
             pictureUrl: (string) ($point->URL_Photo ?? ''),
         );
+    }
+
+    /**
+     * Text fields are padded with spaces, and apostrophes are replaced with spaces
+     * ("RUE D'ARMOR" comes back as "RUE D  ARMOR"): trim them and collapse runs of spaces.
+     */
+    private static function text(mixed $value): string
+    {
+        return (string) preg_replace('/\s+/u', ' ', trim((string) $value));
     }
 
     /**
