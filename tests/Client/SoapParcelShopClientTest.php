@@ -13,6 +13,16 @@ use PHPUnit\Framework\TestCase;
 
 final class SoapParcelShopClientTest extends TestCase
 {
+    public function testMissingPrivateKeyFailsWithAClearMessage(): void
+    {
+        $client = new SoapParcelShopClient('CC12345', '');
+
+        $this->expectException(\Ernadoo\MondialRelay\Exception\MondialRelayException::class);
+        $this->expectExceptionMessage('private key');
+
+        $client->search(new ParcelShopSearchRequest('FR', '59000'));
+    }
+
     /**
      * Test the security hash calculation via reflection.
      * This is the V1 SOAP MD5 security mechanism used for relay point search.

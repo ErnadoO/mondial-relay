@@ -79,6 +79,10 @@ final class RestShipmentClient implements ShipmentClientInterface, LoggerAwareIn
         ];
 
         try {
+            if ('' === $this->apiLogin || '' === $this->apiPassword) {
+                throw new MondialRelayException('Label creation requires the API login and password of an MR Connect API user (Administration → User management → API configuration).');
+            }
+
             try {
                 $psrRes = $this->client->sendRequest($psrReq);
             } catch (ClientExceptionInterface $e) {

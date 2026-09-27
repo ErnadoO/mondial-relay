@@ -101,6 +101,10 @@ final class SoapParcelShopClient implements ParcelShopClientInterface, LoggerAwa
      */
     private function doSearch(ParcelShopSearchRequest $request): array
     {
+        if ('' === $this->privateKey) {
+            throw new MondialRelayException('Relay point search requires the brand private key ("clé privée" in MR Connect).');
+        }
+
         $params = $this->buildSearchParameters($request);
 
         try {

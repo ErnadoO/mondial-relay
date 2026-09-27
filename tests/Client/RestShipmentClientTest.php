@@ -289,6 +289,19 @@ final class RestShipmentClientTest extends TestCase
         }
     }
 
+    public function testMissingApiCredentialsFailBeforeCallingMondialRelay(): void
+    {
+        $psr17 = new Psr17Factory();
+        $http = $this->createMock(ClientInterface::class);
+        $http->expects(self::never())->method('sendRequest');
+        $client = new RestShipmentClient($http, $psr17, $psr17, '', '', 'BDTEST  ', true);
+
+        $this->expectException(MondialRelayException::class);
+        $this->expectExceptionMessage('API login and password');
+
+        $client->createShipment($this->makeRequest());
+    }
+
     public function testCreatedShipmentIsLoggedWithoutCredentials(): void
     {
         [$client] = $this->makeClient((string) file_get_contents(__DIR__.'/../Fixtures/sandbox-shipment-success.xml'));
