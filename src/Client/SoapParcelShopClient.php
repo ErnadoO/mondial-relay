@@ -52,8 +52,8 @@ final class SoapParcelShopClient implements ParcelShopClientInterface, LoggerAwa
             'NumPointRelais'  => '',
             'Ville'           => '',
             'CP'              => $request->postCode,
-            'Latitude'        => '',
-            'Longitude'       => '',
+            'Latitude'        => null === $request->latitude ? '' : sprintf('%.7F', $request->latitude),
+            'Longitude'       => null === $request->longitude ? '' : sprintf('%.7F', $request->longitude),
             'Taille'          => '',
             'Poids'           => $request->weightGrams > 0 ? (string) $request->weightGrams : '',
             'Action'          => $request->deliveryMode->value,
@@ -183,6 +183,8 @@ final class SoapParcelShopClient implements ParcelShopClientInterface, LoggerAwa
             distanceKm: (float) str_replace(',', '.', (string) ($point->Distance ?? '0')) / 1000,
             openingHours: $hours,
             pictureUrl: (string) ($point->URL_Photo ?? ''),
+            locker: 'LOCKER' === self::text($point->Information ?? ''),
+            directions: self::text(($point->Localisation1 ?? '').' '.($point->Localisation2 ?? '')),
         );
     }
 

@@ -7,7 +7,7 @@ namespace Ernadoo\MondialRelay\ParcelShop;
 final readonly class ParcelShop
 {
     /**
-     * @param array<string, string> $openingHours  Day-indexed opening hours, e.g. ['Lundi' => '09:00-12:00 14:00-18:00']
+     * @param array<string, string> $openingHours Day-indexed raw opening hours, e.g. ['Lundi' => '0930-1300 1400-1900']; see schedule()
      */
     public function __construct(
         /** Relay point ID (6 digits, e.g. "066974") */
@@ -24,6 +24,10 @@ final readonly class ParcelShop
         public float $distanceKm,
         public array $openingHours = [],
         public string $pictureUrl = '',
+        /** Automated parcel locker (Mondial Relay "Information": LOCKER) rather than a shop */
+        public bool $locker = false,
+        /** Directions to find the relay point, when Mondial Relay gives some */
+        public string $directions = '',
     ) {
     }
 
@@ -31,5 +35,11 @@ final readonly class ParcelShop
     public function locationCode(): string
     {
         return sprintf('%s-%s', $this->countryCode, $this->id);
+    }
+
+    /** Opening hours, day by day */
+    public function schedule(): OpeningHours
+    {
+        return OpeningHours::fromMondialRelay($this->openingHours);
     }
 }

@@ -193,8 +193,25 @@ $shops = $client->searchParcelShops(new ParcelShopSearchRequest(
 foreach ($shops as $shop) {
     $shop->name;           // "Tabac du Centre"
     $shop->distanceKm;     // 0.5
+    $shop->locker;         // true for an automated parcel locker
     $shop->locationCode(); // "FR-066974": use it as deliveryLocation
 }
+```
+
+Search around coordinates instead of a post code, e.g. the browser's geolocation or the centre of a
+map:
+
+```php
+$shops = $client->searchParcelShops(ParcelShopSearchRequest::around('FR', 47.9944, -4.0915, maxResults: 10));
+```
+
+Opening hours, day by day (ISO-8601 days, 1 = Monday … 7 = Sunday):
+
+```php
+$hours = $shop->schedule();
+$hours->on(1);          // [['09:30', '13:00'], ['14:00', '19:00']]
+$hours->on(7);          // [] — closed
+$hours->isAlwaysOpen(); // true for a 24/7 locker; lockers inside a shop follow its opening hours
 ```
 
 | `ParcelShop` property | Type | Description |
@@ -205,8 +222,10 @@ foreach ($shops as $shop) {
 | `postCode`, `city`, `countryCode` | `string` | Postal code, city, ISO 2-letter country code |
 | `latitude`, `longitude` | `float` | GPS coordinates |
 | `distanceKm` | `float` | Distance from the searched location |
-| `openingHours` | `array` | Day-indexed opening hours |
+| `openingHours` | `array` | Raw day-indexed opening hours (`['Lundi' => '0930-1300 1400-1900']`); prefer `schedule()` |
 | `pictureUrl` | `string` | Photo URL |
+| `locker` | `bool` | Automated parcel locker rather than a shop |
+| `directions` | `string` | Directions to find the relay point, when given |
 
 ## Error handling
 

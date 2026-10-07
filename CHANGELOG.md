@@ -6,6 +6,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Relay point search around coordinates: `ParcelShopSearchRequest::around($countryCode, $latitude, $longitude)`,
+  or the new `latitude` and `longitude` arguments; the post code may then be empty. A request without a
+  post code nor coordinates, with a single coordinate or with out-of-range coordinates now fails with
+  `\InvalidArgumentException` before calling Mondial Relay (it was rejected by the API anyway).
+- `ParcelShop::schedule()`: opening hours day by day (`OpeningHours`: `on($isoDay)`, `isOpenOn()`,
+  `isAlwaysOpen()`, `isEmpty()`), instead of parsing `"0930-1300 1400-1900"`. `openingHours` keeps the
+  raw values.
+- `ParcelShop::$locker` (Mondial Relay flags lockers in its `Information` field) and
+  `ParcelShop::$directions` (`Localisation1` and `Localisation2`, when given).
+
 ## [4.1.0] - 2026-09-27
 
 ### Changed (breaking for named arguments)

@@ -67,6 +67,18 @@ final class SoapParcelShopClientTest extends TestCase
         self::assertSame(strtoupper(md5('CC12345 FR5900024R0107SECRET')), $params['Security']);
     }
 
+    public function testCoordinatesAreSentWithSevenDecimals(): void
+    {
+        $client = new SoapParcelShopClient('CC12345', 'SECRET');
+
+        $params = $client->buildSearchParameters(ParcelShopSearchRequest::around('FR', 47.9819370, -4.097048));
+
+        self::assertSame('', $params['CP']);
+        self::assertSame('47.9819370', $params['Latitude']);
+        self::assertSame('-4.0970480', $params['Longitude']);
+        self::assertSame(strtoupper(md5('CC12345 FR47.9819370-4.097048024R0107SECRET')), $params['Security']);
+    }
+
     public function testRejectedSearchIsLoggedWithoutTheSecretKey(): void
     {
         $client = $this->clientAnswering((object) ['WSI4_PointRelais_RechercheResult' => (object) ['STAT' => '97']]);
@@ -155,6 +167,27 @@ final class SoapParcelShopClientTest extends TestCase
         self::assertEqualsWithDelta(4.986, $shop->distanceKm, 0.001);
         self::assertSame('FR-015893', $shop->locationCode());
         self::assertSame('0001-2359 0000-0000', $shop->openingHours['Lundi']);
+        self::assertFalse($shop->locker);
+        self::assertSame('', $shop->directions);
+    }
+
+    public function testLockersAndDirectionsAreMapped(): void
+    {
+        $client = new SoapParcelShopClient('BDTEST  ', 'PrivateKey');
+
+        $point                = new \stdClass();
+        $point->Num           = '027031';
+        $point->LgAdr1        = 'LOCKER 24/7 CROUS CITE U QUIMPE';
+        $point->Pays          = 'FR';
+        $point->Information   = 'LOCKER';
+        $point->Localisation1 = 'DEVANT LA    RESIDENCE   ';
+        $point->Localisation2 = 'BATIMENT A';
+
+        $mapParcelShop = new \ReflectionMethod($client, 'mapParcelShop');
+        $shop = $mapParcelShop->invoke($client, $point);
+
+        self::assertTrue($shop->locker);
+        self::assertSame('DEVANT LA RESIDENCE BATIMENT A', $shop->directions);
     }
 
     public function testRunsOfSpacesInTextFieldsAreCollapsed(): void
